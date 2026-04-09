@@ -138,6 +138,8 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.venv-openwebui
+.webui_secret_key
 env/
 venv/
 ENV/
