@@ -151,7 +151,7 @@ HEALTH_SLEEP_SECONDS="${HEALTH_SLEEP_SECONDS:-5}"
 
 for ((attempt = 1; attempt <= HEALTH_MAX_ATTEMPTS; attempt++)); do
 	if "$CURL_BIN" -fsSL "$REMOTE_URL" >"$TMP_RESPONSE" 2>/dev/null &&
-		"$CURL_BIN" -fsSI "$REMOTE_URL/static/logo.jpg" >/dev/null 2>&1; then
+		"$CURL_BIN" -fsSI "$REMOTE_URL/logo.jpg" >/dev/null 2>&1; then
 		sed -n '1,10p' "$TMP_RESPONSE"
 		log "部署完成: $REMOTE_URL"
 		exit 0
