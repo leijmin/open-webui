@@ -128,7 +128,7 @@
 				>
 					<div class="flex flex-col md:flex-row w-full gap-1 md:gap-2 px-2">
 						<div class="gap-0.5 min-w-60">
-							<Tooltip content={$i18n.t('e.g. Tell me a fun fact')} placement="top-start">
+							<Tooltip content="例如：生成一条景区讲解提示词" placement="top-start">
 								<input
 									class="text-sm w-full bg-transparent outline-hidden"
 									placeholder={$i18n.t('Title')}
@@ -136,7 +136,7 @@
 								/>
 							</Tooltip>
 
-							<Tooltip content={$i18n.t('e.g. about the Roman Empire')} placement="top-start">
+							<Tooltip content="例如：面向湖北文旅合作场景" placement="top-start">
 								<input
 									class="text-sm w-full bg-transparent outline-hidden text-gray-600 dark:text-gray-400"
 									placeholder={$i18n.t('Subtitle')}
@@ -147,7 +147,7 @@
 
 						<Tooltip
 							className="w-full self-center items-center flex"
-							content={$i18n.t('e.g. Tell me a fun fact about the Roman Empire')}
+							content="例如：请输出一套胡椒文旅联合营销方案，含短视频、海报和转化路径。"
 							placement="top-start"
 						>
 							<textarea

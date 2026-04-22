@@ -1266,31 +1266,28 @@ except Exception as e:
 if default_prompt_suggestions == []:
     default_prompt_suggestions = [
         {
-            "title": ["Help me study", "vocabulary for a college entrance exam"],
-            "content": "Help me study vocabulary: write a sentence for me to fill in the blank, and I'll try to pick the correct option.",
+            "title": ["胡椒文旅活动策划", "给我一套春季周末引流方案"],
+            "content": "请为胡椒文旅生成一份春季周末活动策划方案，包含活动主题、目标人群、预算区间、执行排期、传播渠道和现场互动设计。",
         },
         {
-            "title": ["Give me ideas", "for what to do with my kids' art"],
-            "content": "What are 5 creative things I could do with my kids' art? I don't want to throw them away, but it's also so much clutter.",
+            "title": ["湖北文旅联动推广", "设计联合营销话术和素材方向"],
+            "content": "请围绕胡椒文旅与湖北文旅合作，输出联合营销方案：核心卖点、短视频脚本方向、海报文案、达人合作建议和转化路径。",
         },
         {
-            "title": ["Tell me a fun fact", "about the Roman Empire"],
-            "content": "Tell me a random fun fact about the Roman Empire",
+            "title": ["景区讲解词优化", "生成3分钟中文讲解词"],
+            "content": "请根据景区特色，生成一版3分钟中文讲解词，语气专业亲切，突出文化故事、打卡亮点和游客互动提问点。",
         },
         {
-            "title": ["Show me a code snippet", "of a website's sticky header"],
-            "content": "Show me a code snippet of a website's sticky header in CSS and JavaScript.",
+            "title": ["文旅短视频脚本", "给我5条可直接拍摄的口播脚本"],
+            "content": "请为文旅账号生成5条30秒短视频口播脚本，每条包含开场钩子、景点卖点、互动问题和结尾行动号召。",
         },
         {
-            "title": [
-                "Explain options trading",
-                "if I'm familiar with buying and selling stocks",
-            ],
-            "content": "Explain options trading in simple terms if I'm familiar with buying and selling stocks.",
+            "title": ["游客评价分析", "提炼问题并给出优化建议"],
+            "content": "以下是游客评论，请帮我按服务、导览、交通、餐饮、卫生分类分析，提炼高频问题，并输出可执行改进清单和优先级。",
         },
         {
-            "title": ["Overcome procrastination", "give me tips"],
-            "content": "Could you start by asking me about instances when I procrastinate the most and then give me some suggestions to overcome it?",
+            "title": ["招商合作邮件", "写一封对外合作邀约邮件"],
+            "content": "请帮我写一封胡椒文旅对外合作邀约邮件，包含合作背景、资源优势、联合收益点、合作方式和下一步沟通建议。",
         },
     ]
 
