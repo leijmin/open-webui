@@ -17,9 +17,9 @@
 			</div>
 		{/if}
 
-		<Tooltip content="Home" placement="right">
+		<Tooltip content="首页" placement="right">
 			<button
-				aria-label="Home"
+				aria-label="首页"
 				class=" cursor-pointer {selected === 'home' ? 'rounded-2xl' : 'rounded-full'}"
 				on:click={() => {
 					selected = 'home';
@@ -30,8 +30,8 @@
 				}}
 			>
 				<img
-					src="{WEBUI_BASE_URL}/static/splash.png"
-					class="size-11 dark:invert p-0.5"
+					src="{WEBUI_BASE_URL}/static/logo.jpg"
+					class="w-11 h-11 rounded-xl object-contain"
 					alt="logo"
 					draggable="false"
 				/>
@@ -48,15 +48,15 @@
 			</div>
 		{/if}
 		<button
-			aria-label="Chat"
+			aria-label="对话"
 			class=" cursor-pointer bg-transparent"
 			on:click={() => {
 				selected = '';
 			}}
 		>
 			<img
-				src="{WEBUI_BASE_URL}/static/favicon.png"
-				class="size-10 {selected === '' ? 'rounded-2xl' : 'rounded-full'}"
+				src="{WEBUI_BASE_URL}/static/logo.jpg"
+				class="w-10 h-10 rounded-xl object-contain"
 				alt="logo"
 				draggable="false"
 			/>

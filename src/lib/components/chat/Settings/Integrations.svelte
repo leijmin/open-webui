@@ -128,11 +128,7 @@
 					</div>
 
 					<div class="text-xs text-gray-600 dark:text-gray-300 mb-2">
-						<a
-							class="underline"
-							href="https://github.com/open-webui/openapi-servers"
-							target="_blank">{$i18n.t('Learn more about OpenAPI tool servers.')} ↗</a
-						>
+						如需配置外部工具服务器，请联系管理员。
 					</div>
 				</div>
 
@@ -151,11 +147,7 @@
 						</div>
 
 						<div class="text-xs text-gray-600 dark:text-gray-300 mt-1">
-							<a
-								class="underline"
-								href="https://github.com/open-webui/open-terminal"
-								target="_blank">{$i18n.t('Learn more about Open Terminal')} ↗</a
-							>
+							如需开通或配置终端连接，请联系管理员。
 						</div>
 					</div>
 				</div>

@@ -87,8 +87,8 @@
 	let stylizedPdfExport = true;
 
 	// Admin - Show Update Available Toast
-	let showUpdateToast = true;
-	let showChangelog = true;
+	let showUpdateToast = false;
+	let showChangelog = false;
 
 	let showEmojiInCall = false;
 	let voiceInterruption = false;
@@ -207,8 +207,8 @@
 		responseAutoCopy = $settings?.responseAutoCopy ?? false;
 
 		showUsername = $settings?.showUsername ?? false;
-		showUpdateToast = $settings?.showUpdateToast ?? true;
-		showChangelog = $settings?.showChangelog ?? true;
+		showUpdateToast = false;
+		showChangelog = false;
 
 		showEmojiInCall = $settings?.showEmojiInCall ?? false;
 		voiceInterruption = $settings?.voiceInterruption ?? false;
@@ -546,7 +546,7 @@
 				</div>
 			</div>
 
-			{#if $user?.role === 'admin'}
+			{#if false && $user?.role === 'admin'}
 				<div>
 					<div class=" py-0.5 flex w-full justify-between">
 						<div id="toast-notifications-label" class=" self-center text-xs">

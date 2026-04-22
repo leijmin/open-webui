@@ -90,8 +90,8 @@
 		on:click={onClick}
 	>
 		<img
-			src={image || `${WEBUI_BASE_URL}/static/favicon.png`}
-			class="rounded-full size-8 object-cover flex-shrink-0"
+			src={image || `${WEBUI_BASE_URL}/static/logo.jpg`}
+			class="rounded-lg w-12 h-8 object-contain flex-shrink-0"
 			alt=""
 		/>
 		<div class="flex-1 text-left min-w-0">
@@ -124,8 +124,8 @@
 					on:click={() => filesInputElement.click()}
 				>
 					<img
-						src={image || `${WEBUI_BASE_URL}/static/favicon.png`}
-						class="size-8 object-cover"
+						src={image || `${WEBUI_BASE_URL}/static/logo.jpg`}
+						class="w-12 h-8 object-contain"
 						alt=""
 					/>
 				</button>

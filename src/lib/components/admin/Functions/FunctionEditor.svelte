@@ -41,10 +41,8 @@
 
 	let codeEditor;
 	let boilerplate = `"""
-title: Example Filter
-author: open-webui
-author_url: https://github.com/open-webui
-funding_url: https://github.com/open-webui
+title: 示例过滤器
+author: 胡椒文旅
 version: 0.1
 """
 

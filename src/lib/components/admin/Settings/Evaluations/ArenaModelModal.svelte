@@ -37,7 +37,9 @@
 		}
 	};
 
-	let profileImageUrl = `${WEBUI_BASE_URL}/favicon.png`;
+	const defaultBrandLogo = `${WEBUI_BASE_URL}/static/logo.jpg`;
+
+	let profileImageUrl = defaultBrandLogo;
 	let description = '';
 
 	let selectedModelId = '';
@@ -93,7 +95,7 @@
 
 		name = '';
 		id = '';
-		profileImageUrl = `${WEBUI_BASE_URL}/favicon.png`;
+		profileImageUrl = defaultBrandLogo;
 		description = '';
 		modelIds = [];
 		selectedModelId = '';
@@ -222,7 +224,9 @@
 							/>
 
 							<button
-								class="relative rounded-full w-fit h-fit shrink-0"
+								class="relative w-fit h-fit shrink-0 {profileImageUrl === defaultBrandLogo
+									? 'rounded-xl bg-white'
+									: 'rounded-full'}"
 								type="button"
 								on:click={() => {
 									imageInputElement.click();
@@ -230,12 +234,17 @@
 							>
 								<img
 									src={profileImageUrl}
-									class="size-16 rounded-full object-cover shrink-0"
+									class="size-16 shrink-0 {profileImageUrl === defaultBrandLogo
+										? 'rounded-xl object-contain bg-white p-1'
+										: 'rounded-full object-cover'}"
 									alt="Profile"
 								/>
 
 								<div
-									class="absolute flex justify-center rounded-full bottom-0 left-0 right-0 top-0 h-full w-full overflow-hidden bg-gray-700 bg-fixed opacity-0 transition duration-300 ease-in-out hover:opacity-50"
+									class="absolute flex justify-center bottom-0 left-0 right-0 top-0 h-full w-full overflow-hidden bg-gray-700 bg-fixed opacity-0 transition duration-300 ease-in-out hover:opacity-50 {profileImageUrl ===
+									defaultBrandLogo
+										? 'rounded-xl'
+										: 'rounded-full'}"
 								>
 									<div class="my-auto text-white">
 										<PencilSolid className="size-4" />

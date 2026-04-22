@@ -29,6 +29,7 @@
 	import { updateModelAccessGrants } from '$lib/apis/models';
 
 	const i18n = getContext('i18n');
+	const defaultBrandLogo = `${WEBUI_BASE_URL}/static/logo.jpg`;
 
 	export let onSubmit: Function;
 	export let onBack: null | Function = null;
@@ -74,7 +75,7 @@
 		base_model_id: null,
 		name: '',
 		meta: {
-			profile_image_url: `${WEBUI_BASE_URL}/static/favicon.png`,
+			profile_image_url: defaultBrandLogo,
 			description: '',
 			suggestion_prompts: null,
 			tags: []
@@ -470,7 +471,7 @@
 							<div class="self-center">
 								<button
 									class="rounded-2xl flex shrink-0 items-center {info.meta.profile_image_url !==
-									`${WEBUI_BASE_URL}/static/favicon.png`
+									defaultBrandLogo
 										? 'bg-transparent'
 										: 'bg-white'} shadow-xl group relative"
 									type="button"
@@ -483,13 +484,16 @@
 										<img
 											src={info.meta.profile_image_url}
 											alt="model profile"
-											class="rounded-xl size-20 md:size-48 object-cover shrink-0"
+											class="rounded-xl size-20 md:size-48 shrink-0 {info.meta
+											.profile_image_url === defaultBrandLogo
+												? 'object-contain bg-white p-1.5'
+												: 'object-cover'}"
 										/>
 									{:else}
 										<img
-											src="{WEBUI_BASE_URL}/static/favicon.png"
+											src={defaultBrandLogo}
 											alt="model profile"
-											class=" rounded-xl size-20 md:size-48 object-cover shrink-0"
+											class="rounded-xl size-20 md:size-48 object-contain shrink-0"
 										/>
 									{/if}
 
@@ -523,7 +527,7 @@
 									<button
 										class="px-2 py-1 text-gray-500 rounded-lg text-xs"
 										on:click={() => {
-											info.meta.profile_image_url = `${WEBUI_BASE_URL}/static/favicon.png`;
+											info.meta.profile_image_url = defaultBrandLogo;
 										}}
 										type="button"
 									>

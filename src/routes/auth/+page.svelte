@@ -142,28 +142,15 @@
 
 	let onboarding = false;
 
-	async function setLogoImage() {
-		await tick();
-		const logo = document.getElementById('logo');
+async function setLogoImage() {
+	await tick();
+	const logo = document.getElementById('logo');
 
-		if (logo) {
-			const isDarkMode = document.documentElement.classList.contains('dark');
-
-			if (isDarkMode) {
-				const darkImage = new Image();
-				darkImage.src = `${WEBUI_BASE_URL}/static/favicon-dark.png`;
-
-				darkImage.onload = () => {
-					logo.src = `${WEBUI_BASE_URL}/static/favicon-dark.png`;
-					logo.style.filter = ''; // Ensure no inversion is applied if favicon-dark.png exists
-				};
-
-				darkImage.onerror = () => {
-					logo.style.filter = 'invert(1)'; // Invert image if favicon-dark.png is missing
-				};
-			}
-		}
+	if (logo) {
+		logo.src = `${WEBUI_BASE_URL}/static/logo.jpg`;
+		logo.style.filter = '';
 	}
+}
 
 	onMount(async () => {
 		const redirectPath = $page.url.searchParams.get('redirect');
@@ -213,6 +200,16 @@
 
 	<div class="w-full absolute top-0 left-0 right-0 h-8 drag-region" />
 
+	<!-- 登录页左上角品牌标识 -->
+	<div class="fixed top-4 left-4 z-[60] select-none">
+		<img
+			crossorigin="anonymous"
+			src="{WEBUI_BASE_URL}/static/logo.jpg"
+			class="w-28 sm:w-36 h-auto rounded-xl object-contain shadow-sm"
+			alt="{$WEBUI_NAME}"
+		/>
+	</div>
+
 	{#if loaded}
 		<div
 			class="fixed bg-transparent min-h-screen w-full flex justify-center font-primary z-50 text-black dark:text-white"
@@ -241,9 +238,9 @@
 									<img
 										id="logo"
 										crossorigin="anonymous"
-										src="{WEBUI_BASE_URL}/static/favicon.png"
-										class="size-24 rounded-full"
-										alt="{$WEBUI_NAME} logo"
+										src="{WEBUI_BASE_URL}/static/logo.jpg"
+										class="w-56 max-w-full rounded-3xl object-contain shadow-lg"
+										alt="{$WEBUI_NAME}"
 									/>
 								</div>
 							{/if}
@@ -257,22 +254,23 @@
 								<div class="mb-1">
 									<div class=" text-2xl font-medium">
 										{#if $config?.onboarding ?? false}
-											{$i18n.t(`Get started with {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
+											{$i18n.t(`欢迎使用 {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
 										{:else if mode === 'ldap'}
-											{$i18n.t(`Sign in to {{WEBUI_NAME}} with LDAP`, { WEBUI_NAME: $WEBUI_NAME })}
+											{$i18n.t(`使用企业账号登录 {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
 										{:else if mode === 'signin'}
-											{$i18n.t(`Sign in to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
+											{$i18n.t(`登录 {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
 										{:else}
-											{$i18n.t(`Sign up to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
+											{$i18n.t(`创建 {{WEBUI_NAME}} 账号`, { WEBUI_NAME: $WEBUI_NAME })}
 										{/if}
+									</div>
+
+									<div class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+										{$i18n.t('内部智能助手，帮助整理资料、生成文案和完成日常问答。')}
 									</div>
 
 									{#if $config?.onboarding ?? false}
 										<div class="mt-1 text-xs font-medium text-gray-600 dark:text-gray-500">
-											ⓘ {$WEBUI_NAME}
-											{$i18n.t(
-												'does not make any external connections, and your data stays securely on your locally hosted server.'
-											)}
+											ⓘ {$i18n.t('首次使用请先创建管理员账号，后续即可直接登录使用。')}
 										</div>
 									{/if}
 								</div>
@@ -490,7 +488,7 @@
 											>
 										</button>
 									{/if}
-									{#if $config?.oauth?.providers?.github}
+									{#if false && $config?.oauth?.providers?.github}
 										<button
 											class="flex justify-center items-center bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
 											on:click={() => {
@@ -508,7 +506,7 @@
 													d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.92 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57C20.565 21.795 24 17.31 24 12c0-6.63-5.37-12-12-12z"
 												/>
 											</svg>
-											<span>{$i18n.t('Continue with {{provider}}', { provider: 'GitHub' })}</span>
+											<span>{$i18n.t('Continue with {{provider}}', { provider: '企业账号' })}</span>
 										</button>
 									{/if}
 									{#if $config?.oauth?.providers?.oidc}
@@ -593,8 +591,8 @@
 						<img
 							id="logo"
 							crossorigin="anonymous"
-							src="{WEBUI_BASE_URL}/static/favicon.png"
-							class=" w-6 rounded-full"
+							src="{WEBUI_BASE_URL}/static/logo.jpg"
+							class="w-16 rounded-lg object-contain"
 							alt=""
 						/>
 					</div>

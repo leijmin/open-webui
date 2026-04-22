@@ -705,8 +705,8 @@
 					>
 						<div class=" self-center flex items-center justify-center size-9">
 							<img
-								src="{WEBUI_BASE_URL}/static/favicon.png"
-								class="sidebar-new-chat-icon size-6 rounded-full group-hover:hidden"
+								src="{WEBUI_BASE_URL}/static/logo.jpg"
+								class="sidebar-new-chat-icon w-7 h-7 rounded-lg object-contain group-hover:hidden"
 								alt=""
 							/>
 
@@ -783,9 +783,9 @@
 					</div>
 				{/if}
 
-				{#if $user?.role === 'admin' || $user?.permissions?.workspace?.models || $user?.permissions?.workspace?.knowledge || $user?.permissions?.workspace?.prompts || $user?.permissions?.workspace?.tools}
+				{#if false && ($user?.role === 'admin' || $user?.permissions?.workspace?.models || $user?.permissions?.workspace?.knowledge || $user?.permissions?.workspace?.prompts || $user?.permissions?.workspace?.tools)}
 					<div class="">
-						<Tooltip content={$i18n.t('Workspace')} placement="right">
+						<Tooltip content={$i18n.t('资料中心')} placement="right">
 							<a
 								class=" cursor-pointer flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-850 transition group"
 								href="/workspace"
@@ -796,7 +796,7 @@
 									goto('/workspace');
 									itemClickHandler();
 								}}
-								aria-label={$i18n.t('Workspace')}
+								aria-label={$i18n.t('资料中心')}
 								draggable="false"
 							>
 								<div class=" self-center flex items-center justify-center size-9">
@@ -900,8 +900,8 @@
 				>
 					<img
 						crossorigin="anonymous"
-						src="{WEBUI_BASE_URL}/static/favicon.png"
-						class="sidebar-new-chat-icon size-6 rounded-full"
+						src="{WEBUI_BASE_URL}/static/logo.jpg"
+						class="sidebar-new-chat-icon w-7 h-7 rounded-lg object-contain"
 						alt=""
 					/>
 				</a>
@@ -1014,7 +1014,7 @@
 						</div>
 					{/if}
 
-					{#if $user?.role === 'admin' || $user?.permissions?.workspace?.models || $user?.permissions?.workspace?.knowledge || $user?.permissions?.workspace?.prompts || $user?.permissions?.workspace?.tools}
+					{#if false && ($user?.role === 'admin' || $user?.permissions?.workspace?.models || $user?.permissions?.workspace?.knowledge || $user?.permissions?.workspace?.prompts || $user?.permissions?.workspace?.tools)}
 						<div class="px-[0.4375rem] flex justify-center text-gray-800 dark:text-gray-200">
 							<a
 								id="sidebar-workspace-button"
@@ -1022,7 +1022,7 @@
 								href="/workspace"
 								on:click={itemClickHandler}
 								draggable="false"
-								aria-label={$i18n.t('Workspace')}
+								aria-label={$i18n.t('资料中心')}
 							>
 								<div class="self-center">
 									<svg
@@ -1042,7 +1042,7 @@
 								</div>
 
 								<div class="flex self-center translate-y-[0.5px]">
-									<div class=" self-center text-sm font-primary">{$i18n.t('Workspace')}</div>
+									<div class=" self-center text-sm font-primary">{$i18n.t('资料中心')}</div>
 								</div>
 							</a>
 						</div>

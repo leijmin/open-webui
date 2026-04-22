@@ -482,16 +482,7 @@
 
 						<div class="mt-2 mb-1 text-xs text-gray-400 dark:text-gray-500">
 							{$i18n.t(`Open WebUI uses faster-whisper internally.`)}
-
-							<a
-								class=" hover:underline dark:text-gray-200 text-gray-800"
-								href="https://github.com/SYSTRAN/faster-whisper"
-								target="_blank"
-							>
-								{$i18n.t(
-									`Click here to learn more about faster-whisper and see the available models.`
-								)}
-							</a>
+							<span class="ml-1">如需查看可用模型，请联系管理员。</span>
 						</div>
 					</div>
 				{/if}
@@ -628,26 +619,7 @@
 							</div>
 							<div class="mt-2 mb-1 text-xs text-gray-400 dark:text-gray-500">
 								{$i18n.t(`Open WebUI uses SpeechT5 and CMU Arctic speaker embeddings.`)}
-
-								To learn more about SpeechT5,
-
-								<a
-									class=" hover:underline dark:text-gray-200 text-gray-800"
-									href="https://github.com/microsoft/SpeechT5"
-									target="_blank"
-								>
-									{$i18n.t(`click here`, {
-										name: 'SpeechT5'
-									})}.
-								</a>
-								To see the available CMU Arctic speaker embeddings,
-								<a
-									class=" hover:underline dark:text-gray-200 text-gray-800"
-									href="https://huggingface.co/datasets/Matthijs/cmu-arctic-xvectors"
-									target="_blank"
-								>
-									{$i18n.t(`click here`)}.
-								</a>
+								<span class="ml-1">如需调整语音模型，请联系管理员。</span>
 							</div>
 						</div>
 					{:else if TTS_ENGINE === 'openai'}

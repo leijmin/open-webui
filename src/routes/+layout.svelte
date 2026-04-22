@@ -448,9 +448,9 @@
 
 					if ($isLastActiveTab) {
 						if ($settings?.notificationEnabled ?? false) {
-							new Notification(`${displayTitle} • Open WebUI`, {
+							new Notification(`${displayTitle} • ${$WEBUI_NAME || '胡椒文旅'}`, {
 								body: content,
-								icon: `${WEBUI_BASE_URL}/static/favicon.png`
+								icon: `${WEBUI_BASE_URL}/static/logo.jpg`
 							});
 						}
 					}
@@ -651,7 +651,7 @@
 
 				if ($isLastActiveTab) {
 					if ($settings?.notificationEnabled ?? false) {
-						new Notification(`${title} • Open WebUI`, {
+						new Notification(`${title} • ${$WEBUI_NAME || '胡椒文旅'}`, {
 							body: data?.content,
 							icon: `${WEBUI_API_BASE_URL}/users/${data?.user?.id}/profile/image`
 						});
@@ -843,18 +843,17 @@
 		// Initialize i18n even if we didn't get a backend config,
 		// so `/error` can show something that's not `undefined`.
 
-		initI18n(localStorage?.locale);
-		if (!localStorage.locale) {
-			const languages = await getLanguages();
-			const browserLanguages = navigator.languages
-				? navigator.languages
-				: [navigator.language || navigator.userLanguage];
-			const lang = backendConfig?.default_locale
-				? backendConfig.default_locale
-				: bestMatchingLanguage(languages, browserLanguages, 'en-US');
-			changeLanguage(lang);
-			dayjs.locale(lang);
-		}
+		const defaultLanguage = backendConfig?.default_locale || 'zh-CN';
+		initI18n(defaultLanguage);
+
+		const languages = await getLanguages();
+		const browserLanguages = navigator.languages
+			? navigator.languages
+			: [navigator.language || navigator.userLanguage];
+		const lang = defaultLanguage || bestMatchingLanguage(languages, browserLanguages, 'zh-CN');
+		localStorage.setItem('locale', lang);
+		changeLanguage(lang);
+		dayjs.locale(lang.toLowerCase());
 
 		if (backendConfig) {
 			// Save Backend Status to Store
@@ -932,11 +931,7 @@
 		}
 
 		// Auto-show SyncStatsModal when opened with ?sync=true (from community)
-		if (
-			(window.opener ?? false) &&
-			$page.url.searchParams.get('sync') === 'true' &&
-			($config?.features?.enable_community_sharing ?? false)
-		) {
+		if (false && (window.opener ?? false) && $page.url.searchParams.get('sync') === 'true') {
 			showSyncStatsModal = true;
 		}
 
@@ -957,7 +952,7 @@
 
 <svelte:head>
 	<title>{$WEBUI_NAME}</title>
-	<link crossorigin="anonymous" rel="icon" href="{WEBUI_BASE_URL}/static/favicon.png" />
+	<link crossorigin="anonymous" rel="icon" href="{WEBUI_BASE_URL}/static/logo.jpg" />
 
 	<meta name="apple-mobile-web-app-title" content={$WEBUI_NAME} />
 	<meta name="description" content={$WEBUI_NAME} />
@@ -990,7 +985,7 @@
 	{/if}
 {/if}
 
-{#if $config?.features.enable_community_sharing}
+{#if false && $config?.features.enable_community_sharing}
 	<SyncStatsModal bind:show={showSyncStatsModal} eventData={syncStatsEventData} />
 {/if}
 

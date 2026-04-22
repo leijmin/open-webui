@@ -1243,7 +1243,7 @@ ENABLE_PASSWORD_AUTH = os.environ.get("ENABLE_PASSWORD_AUTH", "True").lower() ==
 DEFAULT_LOCALE = PersistentConfig(
     "DEFAULT_LOCALE",
     "ui.default_locale",
-    os.environ.get("DEFAULT_LOCALE", ""),
+    os.environ.get("DEFAULT_LOCALE", "zh-CN"),
 )
 
 DEFAULT_MODELS = PersistentConfig(
@@ -1732,7 +1732,7 @@ DEFAULT_ARENA_MODEL = {
     "id": "arena-model",
     "name": "Arena Model",
     "meta": {
-        "profile_image_url": "/favicon.png",
+        "profile_image_url": "/static/logo.jpg",
         "description": "Submit your questions to anonymous AI chatbots and vote on the best response.",
         "model_ids": None,
     },
@@ -1767,7 +1767,7 @@ ENABLE_ADMIN_ANALYTICS = (
 ENABLE_COMMUNITY_SHARING = PersistentConfig(
     "ENABLE_COMMUNITY_SHARING",
     "ui.enable_community_sharing",
-    os.environ.get("ENABLE_COMMUNITY_SHARING", "True").lower() == "true",
+    os.environ.get("ENABLE_COMMUNITY_SHARING", "False").lower() == "true",
 )
 
 ENABLE_MESSAGE_RATING = PersistentConfig(

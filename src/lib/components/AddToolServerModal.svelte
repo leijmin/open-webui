@@ -872,12 +872,7 @@
 							{$i18n.t(
 								'MCP support is experimental and its specification changes often, which can lead to incompatibilities. OpenAPI specification support is directly maintained by the Open WebUI team, making it the more reliable option for compatibility.'
 							)}
-
-							<a
-								class="font-medium underline"
-								href="https://docs.openwebui.com/features/mcp"
-								target="_blank">{$i18n.t('Read more →')}</a
-							>
+							<span class="font-medium">如需配置请联系管理员。</span>
 						</div>
 					{/if}
 
