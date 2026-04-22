@@ -110,7 +110,7 @@
 
 	<div class="shrink-0 self-top -translate-y-0.5">
 		<img
-			src="{WEBUI_BASE_URL}/static/logo.jpg"
+			src="{WEBUI_BASE_URL}/logo.jpg"
 			alt="logo"
 			class="w-10 h-6 rounded-md object-contain"
 		/>

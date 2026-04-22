@@ -17,6 +17,15 @@ class TestModels(AbstractPostgresTest):
         assert response.status_code == 200
         assert len(response.json()) == 0
 
+    def test_model_profile_image_uses_valid_fallback(self):
+        with mock_webui_user(id="2"):
+            response = self.fast_api_client.get(
+                self.create_url("/model/profile/image"), params={"id": "audio1.0"}
+            )
+
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("image/")
+
         with mock_webui_user(id="2"):
             response = self.fast_api_client.post(
                 self.create_url("/add"),

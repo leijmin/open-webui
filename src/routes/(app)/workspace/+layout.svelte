@@ -1,23 +1,19 @@
 <script lang="ts">
 	import { onMount, getContext } from 'svelte';
-	import {
-		WEBUI_NAME,
-		showSidebar,
-		functions,
-		user,
-		mobile,
-		models,
-		knowledge,
-		tools
-	} from '$lib/stores';
+	import { WEBUI_NAME, showSidebar, user, mobile } from '$lib/stores';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
+	import { shouldShowKnowledgeEntry } from '$lib/utils/workspaceNavigation';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import Sidebar from '$lib/components/icons/Sidebar.svelte';
 
 	const i18n = getContext('i18n');
 
 	let loaded = false;
+	$: workspaceTitle =
+		$page.url.pathname === '/workspace' || $page.url.pathname.includes('/workspace/knowledge')
+			? $i18n.t('Knowledge')
+			: $i18n.t('Workspace');
 
 	onMount(async () => {
 		if ($user?.role !== 'admin') {
@@ -46,7 +42,7 @@
 
 <svelte:head>
 	<title>
-		{$i18n.t('资料中心')} • {$WEBUI_NAME}
+		{workspaceTitle} • {$WEBUI_NAME}
 	</title>
 </svelte:head>
 
@@ -84,18 +80,7 @@
 					<div
 						class="flex gap-1 scrollbar-none overflow-x-auto w-fit text-center text-sm font-medium rounded-full bg-transparent py-1 touch-auto pointer-events-auto"
 					>
-						{#if $user?.role === 'admin' || $user?.permissions?.workspace?.models}
-							<a
-								draggable="false"
-								aria-current={$page.url.pathname.includes('/workspace/models') ? 'page' : null}
-								class="min-w-fit p-1.5 {$page.url.pathname.includes('/workspace/models')
-									? ''
-									: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition select-none"
-								href="/workspace/models">{$i18n.t('Models')}</a
-							>
-						{/if}
-
-						{#if $user?.role === 'admin' || $user?.permissions?.workspace?.knowledge}
+						{#if shouldShowKnowledgeEntry($user)}
 							<a
 								draggable="false"
 								aria-current={$page.url.pathname.includes('/workspace/knowledge') ? 'page' : null}
@@ -107,47 +92,10 @@
 								{$i18n.t('Knowledge')}
 							</a>
 						{/if}
-
-						{#if $user?.role === 'admin' || $user?.permissions?.workspace?.prompts}
-							<a
-								draggable="false"
-								aria-current={$page.url.pathname.includes('/workspace/prompts') ? 'page' : null}
-								class="min-w-fit p-1.5 {$page.url.pathname.includes('/workspace/prompts')
-									? ''
-									: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition select-none"
-								href="/workspace/prompts">{$i18n.t('Prompts')}</a
-							>
-						{/if}
-
-						{#if $user?.role === 'admin' || $user?.permissions?.workspace?.skills}
-							<a
-								draggable="false"
-								aria-current={$page.url.pathname.includes('/workspace/skills') ? 'page' : null}
-								class="min-w-fit p-1.5 {$page.url.pathname.includes('/workspace/skills')
-									? ''
-									: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition select-none"
-								href="/workspace/skills"
-							>
-								{$i18n.t('Skills')}
-							</a>
-						{/if}
-
-						{#if $user?.role === 'admin' || $user?.permissions?.workspace?.tools}
-							<a
-								draggable="false"
-								aria-current={$page.url.pathname.includes('/workspace/tools') ? 'page' : null}
-								class="min-w-fit p-1.5 {$page.url.pathname.includes('/workspace/tools')
-									? ''
-									: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition select-none"
-								href="/workspace/tools"
-							>
-								{$i18n.t('Tools')}
-							</a>
-						{/if}
 					</div>
 				</div>
 
-				<!-- <div class="flex items-center text-xl font-medium">{$i18n.t('资料中心')}</div> -->
+				<!-- <div class="flex items-center text-xl font-medium">{$i18n.t('知识库')}</div> -->
 			</div>
 		</nav>
 

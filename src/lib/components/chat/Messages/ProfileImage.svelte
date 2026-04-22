@@ -2,9 +2,9 @@
 	import { WEBUI_BASE_URL } from '$lib/constants';
 
 	export let className = 'size-8';
-	export let src = `${WEBUI_BASE_URL}/static/logo.jpg`;
+export let src = `${WEBUI_BASE_URL}/logo.jpg`;
 
-	const defaultBrandLogo = `${WEBUI_BASE_URL}/static/logo.jpg`;
+const defaultBrandLogo = `${WEBUI_BASE_URL}/logo.jpg`;
 </script>
 
 <img
@@ -17,7 +17,7 @@
 			  src.startsWith('/')
 			? src
 			: `${WEBUI_BASE_URL}/user.png`}
-	class="{className} {(src === '' || src === defaultBrandLogo || src === '/static/logo.jpg')
+	class="{className} {(src === '' || src === defaultBrandLogo || src === '/logo.jpg')
 		? 'object-contain rounded-lg bg-white p-0.5'
 		: 'object-cover rounded-full'}"
 	alt="profile"

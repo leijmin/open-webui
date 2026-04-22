@@ -64,8 +64,10 @@
 	import Sidebar from '../icons/Sidebar.svelte';
 	import PinnedModelList from './Sidebar/PinnedModelList.svelte';
 	import Note from '../icons/Note.svelte';
+	import BookOpen from '../icons/BookOpen.svelte';
 	import { slide } from 'svelte/transition';
 	import HotkeyHint from '../common/HotkeyHint.svelte';
+	import { shouldShowKnowledgeEntry } from '$lib/utils/workspaceNavigation';
 
 	const BREAKPOINT = 768;
 
@@ -705,7 +707,7 @@
 					>
 						<div class=" self-center flex items-center justify-center size-9">
 							<img
-								src="{WEBUI_BASE_URL}/static/logo.jpg"
+								src="/logo.png"
 								class="sidebar-new-chat-icon w-7 h-7 rounded-lg object-contain group-hover:hidden"
 								alt=""
 							/>
@@ -783,37 +785,24 @@
 					</div>
 				{/if}
 
-				{#if false && ($user?.role === 'admin' || $user?.permissions?.workspace?.models || $user?.permissions?.workspace?.knowledge || $user?.permissions?.workspace?.prompts || $user?.permissions?.workspace?.tools)}
+				{#if shouldShowKnowledgeEntry($user)}
 					<div class="">
-						<Tooltip content={$i18n.t('资料中心')} placement="right">
+						<Tooltip content={$i18n.t('Knowledge')} placement="right">
 							<a
 								class=" cursor-pointer flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-850 transition group"
-								href="/workspace"
+								href="/workspace/knowledge"
 								on:click={async (e) => {
 									e.stopImmediatePropagation();
 									e.preventDefault();
 
-									goto('/workspace');
+									goto('/workspace/knowledge');
 									itemClickHandler();
 								}}
-								aria-label={$i18n.t('资料中心')}
+								aria-label={$i18n.t('Knowledge')}
 								draggable="false"
 							>
 								<div class=" self-center flex items-center justify-center size-9">
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										fill="none"
-										viewBox="0 0 24 24"
-										stroke-width="1.5"
-										stroke="currentColor"
-										class="size-4.5"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											d="M13.5 16.875h3.375m0 0h3.375m-3.375 0V13.5m0 3.375v3.375M6 10.5h2.25a2.25 2.25 0 0 0 2.25-2.25V6a2.25 2.25 0 0 0-2.25-2.25H6A2.25 2.25 0 0 0 3.75 6v2.25A2.25 2.25 0 0 0 6 10.5Zm0 9.75h2.25A2.25 2.25 0 0 0 10.5 18v-2.25a2.25 2.25 0 0 0-2.25-2.25H6a2.25 2.25 0 0 0-2.25 2.25V18A2.25 2.25 0 0 0 6 20.25Zm9.75-9.75H18a2.25 2.25 0 0 0 2.25-2.25V6A2.25 2.25 0 0 0 18 3.75h-2.25A2.25 2.25 0 0 0 13.5 6v2.25a2.25 2.25 0 0 0 2.25 2.25Z"
-										/>
-									</svg>
+									<BookOpen className="size-4.5" strokeWidth="1.8" />
 								</div>
 							</a>
 						</Tooltip>
@@ -900,7 +889,7 @@
 				>
 					<img
 						crossorigin="anonymous"
-						src="{WEBUI_BASE_URL}/static/logo.jpg"
+						src="/logo.png"
 						class="sidebar-new-chat-icon w-7 h-7 rounded-lg object-contain"
 						alt=""
 					/>
@@ -1014,35 +1003,22 @@
 						</div>
 					{/if}
 
-					{#if false && ($user?.role === 'admin' || $user?.permissions?.workspace?.models || $user?.permissions?.workspace?.knowledge || $user?.permissions?.workspace?.prompts || $user?.permissions?.workspace?.tools)}
+					{#if shouldShowKnowledgeEntry($user)}
 						<div class="px-[0.4375rem] flex justify-center text-gray-800 dark:text-gray-200">
 							<a
-								id="sidebar-workspace-button"
+								id="sidebar-knowledge-button"
 								class="grow flex items-center space-x-3 rounded-2xl px-2.5 py-2 hover:bg-gray-100 dark:hover:bg-gray-900 transition"
-								href="/workspace"
+								href="/workspace/knowledge"
 								on:click={itemClickHandler}
 								draggable="false"
-								aria-label={$i18n.t('资料中心')}
+								aria-label={$i18n.t('Knowledge')}
 							>
 								<div class="self-center">
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										fill="none"
-										viewBox="0 0 24 24"
-										stroke-width="2"
-										stroke="currentColor"
-										class="size-4.5"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											d="M13.5 16.875h3.375m0 0h3.375m-3.375 0V13.5m0 3.375v3.375M6 10.5h2.25a2.25 2.25 0 0 0 2.25-2.25V6a2.25 2.25 0 0 0-2.25-2.25H6A2.25 2.25 0 0 0 3.75 6v2.25A2.25 2.25 0 0 0 6 10.5Zm0 9.75h2.25A2.25 2.25 0 0 0 10.5 18v-2.25a2.25 2.25 0 0 0-2.25-2.25H6a2.25 2.25 0 0 0-2.25 2.25V18A2.25 2.25 0 0 0 6 20.25Zm9.75-9.75H18a2.25 2.25 0 0 0 2.25-2.25V6A2.25 2.25 0 0 0 18 3.75h-2.25A2.25 2.25 0 0 0 13.5 6v2.25a2.25 2.25 0 0 0 2.25 2.25Z"
-										/>
-									</svg>
+									<BookOpen className="size-4.5" strokeWidth="2" />
 								</div>
 
 								<div class="flex self-center translate-y-[0.5px]">
-									<div class=" self-center text-sm font-primary">{$i18n.t('资料中心')}</div>
+									<div class=" self-center text-sm font-primary">{$i18n.t('Knowledge')}</div>
 								</div>
 							</a>
 						</div>

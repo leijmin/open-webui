@@ -29,7 +29,7 @@
 	import { updateModelAccessGrants } from '$lib/apis/models';
 
 	const i18n = getContext('i18n');
-	const defaultBrandLogo = `${WEBUI_BASE_URL}/static/logo.jpg`;
+	const defaultBrandLogo = `${WEBUI_BASE_URL}/logo.jpg`;
 
 	export let onSubmit: Function;
 	export let onBack: null | Function = null;

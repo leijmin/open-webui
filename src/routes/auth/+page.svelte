@@ -147,12 +147,18 @@ async function setLogoImage() {
 	const logo = document.getElementById('logo');
 
 	if (logo) {
-		logo.src = `${WEBUI_BASE_URL}/static/logo.jpg`;
+		logo.src = `/logo.png`;
 		logo.style.filter = '';
 	}
 }
 
 	onMount(async () => {
+		// 认证页始终使用浅色视觉，避免继承历史主题导致页面发绿/发暗
+		document.documentElement.classList.remove('dark', 'her');
+		document.documentElement.classList.add('light');
+		// 认证页不展示启动遮罩，避免中间大 logo 残留
+		document.getElementById('splash-screen')?.remove();
+
 		const redirectPath = $page.url.searchParams.get('redirect');
 		if ($user !== undefined) {
 			goto(redirectPath || '/');
@@ -195,27 +201,29 @@ async function setLogoImage() {
 	}}
 />
 
-<div class="w-full h-screen max-h-[100dvh] text-white relative" id="auth-page">
-	<div class="w-full h-full absolute top-0 left-0 bg-white dark:bg-black"></div>
+<div class="w-full h-screen max-h-[100dvh] relative" id="auth-page">
+	<div class="w-full h-full absolute top-0 left-0 bg-white"></div>
 
-	<div class="w-full absolute top-0 left-0 right-0 h-8 drag-region" />
+	<div class="w-full absolute top-0 left-0 right-0 h-8 drag-region"></div>
 
-	<!-- 登录页左上角品牌标识 -->
-	<div class="fixed top-4 left-4 z-[60] select-none">
-		<img
-			crossorigin="anonymous"
-			src="{WEBUI_BASE_URL}/static/logo.jpg"
-			class="w-28 sm:w-36 h-auto rounded-xl object-contain shadow-sm"
-			alt="{$WEBUI_NAME}"
-		/>
-	</div>
+	<!-- OnBoarding 已有左上角 logo，避免重复显示 -->
+	{#if !onboarding}
+		<div class="fixed top-3 left-3 sm:top-4 sm:left-4 lg:top-5 lg:left-5 z-[60] select-none">
+			<img
+				crossorigin="anonymous"
+				src="/logo.png"
+				class="h-8 sm:h-9 lg:h-10 w-auto rounded-md object-contain opacity-95"
+				alt="{$WEBUI_NAME}"
+			/>
+		</div>
+	{/if}
 
 	{#if loaded}
 		<div
-			class="fixed bg-transparent min-h-screen w-full flex justify-center font-primary z-50 text-black dark:text-white"
+			class="fixed bg-transparent min-h-screen w-full flex justify-center font-primary z-50 text-black"
 			id="auth-container"
 		>
-			<div class="w-full px-10 min-h-screen flex flex-col text-center">
+			<div class="w-full px-4 sm:px-8 min-h-screen flex flex-col text-center">
 				{#if ($config?.features.auth_trusted_header ?? false) || $config?.features.auth === false}
 					<div class=" my-auto pb-10 w-full sm:max-w-md">
 						<div
@@ -232,18 +240,9 @@ async function setLogoImage() {
 					</div>
 				{:else}
 					<div class="my-auto flex flex-col justify-center items-center">
-						<div class=" sm:max-w-md my-auto pb-10 w-full dark:text-gray-100">
-							{#if $config?.metadata?.auth_logo_position === 'center'}
-								<div class="flex justify-center mb-6">
-									<img
-										id="logo"
-										crossorigin="anonymous"
-										src="{WEBUI_BASE_URL}/static/logo.jpg"
-										class="w-56 max-w-full rounded-3xl object-contain shadow-lg"
-										alt="{$WEBUI_NAME}"
-									/>
-								</div>
-							{/if}
+						<div
+							class="sm:max-w-md my-auto w-full rounded-2xl border border-gray-200 bg-white px-4 sm:px-6 py-6 sm:py-7 shadow-[0_10px_30px_rgba(0,0,0,0.06)]"
+						>
 							<form
 								class=" flex flex-col justify-center"
 								on:submit={(e) => {
@@ -252,7 +251,7 @@ async function setLogoImage() {
 								}}
 							>
 								<div class="mb-1">
-									<div class=" text-2xl font-medium">
+									<div class="text-2xl font-semibold tracking-tight">
 										{#if $config?.onboarding ?? false}
 											{$i18n.t(`欢迎使用 {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
 										{:else if mode === 'ldap'}
@@ -264,21 +263,21 @@ async function setLogoImage() {
 										{/if}
 									</div>
 
-									<div class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+									<div class="mt-2 text-sm leading-6 text-gray-600">
 										{$i18n.t('内部智能助手，帮助整理资料、生成文案和完成日常问答。')}
 									</div>
 
 									{#if $config?.onboarding ?? false}
-										<div class="mt-1 text-xs font-medium text-gray-600 dark:text-gray-500">
+										<div class="mt-2 text-xs font-medium text-gray-600">
 											ⓘ {$i18n.t('首次使用请先创建管理员账号，后续即可直接登录使用。')}
 										</div>
 									{/if}
 								</div>
 
 								{#if $config?.features.enable_login_form || $config?.features.enable_ldap || form}
-									<div class="flex flex-col mt-4">
+									<div class="flex flex-col mt-5 gap-2.5">
 										{#if mode === 'signup'}
-											<div class="mb-2">
+											<div>
 												<label for="name" class="text-sm font-medium text-left mb-1 block"
 													>{$i18n.t('Name')}</label
 												>
@@ -286,7 +285,7 @@ async function setLogoImage() {
 													bind:value={name}
 													type="text"
 													id="name"
-													class="my-0.5 w-full text-sm outline-hidden bg-transparent placeholder:text-gray-300 dark:placeholder:text-gray-600"
+													class="my-0.5 w-full text-sm rounded-xl border border-gray-300 px-3 py-2.5 outline-hidden bg-white placeholder:text-gray-400 focus:border-gray-500 transition"
 													autocomplete="name"
 													placeholder={$i18n.t('Enter Your Full Name')}
 													required
@@ -295,14 +294,14 @@ async function setLogoImage() {
 										{/if}
 
 										{#if mode === 'ldap'}
-											<div class="mb-2">
+											<div>
 												<label for="username" class="text-sm font-medium text-left mb-1 block"
 													>{$i18n.t('Username')}</label
 												>
 												<input
 													bind:value={ldapUsername}
 													type="text"
-													class="my-0.5 w-full text-sm outline-hidden bg-transparent placeholder:text-gray-300 dark:placeholder:text-gray-600"
+													class="my-0.5 w-full text-sm rounded-xl border border-gray-300 px-3 py-2.5 outline-hidden bg-white placeholder:text-gray-400 focus:border-gray-500 transition"
 													autocomplete="username"
 													name="username"
 													id="username"
@@ -311,7 +310,7 @@ async function setLogoImage() {
 												/>
 											</div>
 										{:else}
-											<div class="mb-2">
+											<div>
 												<label for="email" class="text-sm font-medium text-left mb-1 block"
 													>{$i18n.t('Email')}</label
 												>
@@ -319,7 +318,7 @@ async function setLogoImage() {
 													bind:value={email}
 													type="email"
 													id="email"
-													class="my-0.5 w-full text-sm outline-hidden bg-transparent placeholder:text-gray-300 dark:placeholder:text-gray-600"
+													class="my-0.5 w-full text-sm rounded-xl border border-gray-300 px-3 py-2.5 outline-hidden bg-white placeholder:text-gray-400 focus:border-gray-500 transition"
 													autocomplete="email"
 													name="email"
 													placeholder={$i18n.t('Enter Your Email')}
@@ -336,7 +335,7 @@ async function setLogoImage() {
 												bind:value={password}
 												type="password"
 												id="password"
-												class="my-0.5 w-full text-sm outline-hidden bg-transparent placeholder:text-gray-300 dark:placeholder:text-gray-600"
+												class="my-0.5 w-full text-sm rounded-xl border border-gray-300 px-3 py-2.5 outline-hidden bg-white placeholder:text-gray-400 focus:border-gray-500 transition"
 												placeholder={$i18n.t('Enter Your Password')}
 												autocomplete={mode === 'signup' ? 'new-password' : 'current-password'}
 												name="password"
@@ -357,7 +356,7 @@ async function setLogoImage() {
 													bind:value={confirmPassword}
 													type="password"
 													id="confirm-password"
-													class="my-0.5 w-full text-sm outline-hidden bg-transparent"
+													class="my-0.5 w-full text-sm rounded-xl border border-gray-300 px-3 py-2.5 outline-hidden bg-white placeholder:text-gray-400 focus:border-gray-500 transition"
 													placeholder={$i18n.t('Confirm Your Password')}
 													autocomplete="new-password"
 													name="confirm-password"
@@ -367,18 +366,18 @@ async function setLogoImage() {
 										{/if}
 									</div>
 								{/if}
-								<div class="mt-5">
+								<div class="mt-6">
 									{#if $config?.features.enable_login_form || $config?.features.enable_ldap || form}
 										{#if mode === 'ldap'}
 											<button
-												class="bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
+												class="bg-gray-900 text-white hover:bg-gray-800 transition w-full rounded-xl font-medium text-sm py-2.5"
 												type="submit"
 											>
 												{$i18n.t('Authenticate')}
 											</button>
 										{:else}
 											<button
-												class="bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
+												class="bg-gray-900 text-white hover:bg-gray-800 transition w-full rounded-xl font-medium text-sm py-2.5"
 												type="submit"
 											>
 												{mode === 'signin'
@@ -389,13 +388,13 @@ async function setLogoImage() {
 											</button>
 
 											{#if $config?.features.enable_signup && !($config?.onboarding ?? false)}
-												<div class=" mt-4 text-sm text-center">
+												<div class="mt-4 text-sm text-center text-gray-600">
 													{mode === 'signin'
 														? $i18n.t("Don't have an account?")
 														: $i18n.t('Already have an account?')}
 
 													<button
-														class=" font-medium underline"
+														class="font-medium underline decoration-1 underline-offset-2"
 														type="button"
 														on:click={() => {
 															if (mode === 'signin') {
@@ -416,20 +415,20 @@ async function setLogoImage() {
 
 							{#if Object.keys($config?.oauth?.providers ?? {}).length > 0}
 								<div class="inline-flex items-center justify-center w-full">
-									<hr class="w-32 h-px my-4 border-0 dark:bg-gray-100/10 bg-gray-700/10" />
+									<hr class="w-24 sm:w-32 h-px my-4 border-0 bg-gray-200" />
 									{#if $config?.features.enable_login_form || $config?.features.enable_ldap || form}
 										<span
-											class="px-3 text-sm font-medium text-gray-900 dark:text-white bg-transparent"
+											class="px-3 text-sm font-medium text-gray-500 bg-transparent"
 											>{$i18n.t('or')}</span
 										>
 									{/if}
 
-									<hr class="w-32 h-px my-4 border-0 dark:bg-gray-100/10 bg-gray-700/10" />
+									<hr class="w-24 sm:w-32 h-px my-4 border-0 bg-gray-200" />
 								</div>
 								<div class="flex flex-col space-y-2">
 									{#if $config?.oauth?.providers?.google}
 										<button
-											class="flex justify-center items-center bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
+											class="flex justify-center items-center bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 transition w-full rounded-xl font-medium text-sm py-2.5"
 											on:click={() => {
 												window.location.href = `${WEBUI_BASE_URL}/oauth/google/login`;
 											}}
@@ -459,7 +458,7 @@ async function setLogoImage() {
 									{/if}
 									{#if $config?.oauth?.providers?.microsoft}
 										<button
-											class="flex justify-center items-center bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
+											class="flex justify-center items-center bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 transition w-full rounded-xl font-medium text-sm py-2.5"
 											on:click={() => {
 												window.location.href = `${WEBUI_BASE_URL}/oauth/microsoft/login`;
 											}}
@@ -490,7 +489,7 @@ async function setLogoImage() {
 									{/if}
 									{#if false && $config?.oauth?.providers?.github}
 										<button
-											class="flex justify-center items-center bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
+											class="flex justify-center items-center bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 transition w-full rounded-xl font-medium text-sm py-2.5"
 											on:click={() => {
 												window.location.href = `${WEBUI_BASE_URL}/oauth/github/login`;
 											}}
@@ -511,7 +510,7 @@ async function setLogoImage() {
 									{/if}
 									{#if $config?.oauth?.providers?.oidc}
 										<button
-											class="flex justify-center items-center bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
+											class="flex justify-center items-center bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 transition w-full rounded-xl font-medium text-sm py-2.5"
 											on:click={() => {
 												window.location.href = `${WEBUI_BASE_URL}/oauth/oidc/login`;
 											}}
@@ -573,7 +572,7 @@ async function setLogoImage() {
 							{/if}
 						</div>
 						{#if $config?.metadata?.login_footer}
-							<div class="max-w-3xl mx-auto">
+							<div class="max-w-3xl mx-auto mt-2 px-2">
 								<div class="mt-2 text-[0.7rem] text-gray-500 dark:text-gray-400 marked">
 									{@html DOMPurify.sanitize(marked($config?.metadata?.login_footer))}
 								</div>
@@ -584,20 +583,5 @@ async function setLogoImage() {
 			</div>
 		</div>
 
-		{#if !$config?.metadata?.auth_logo_position}
-			<div class="fixed m-10 z-50">
-				<div class="flex space-x-2">
-					<div class=" self-center">
-						<img
-							id="logo"
-							crossorigin="anonymous"
-							src="{WEBUI_BASE_URL}/static/logo.jpg"
-							class="w-16 rounded-lg object-contain"
-							alt=""
-						/>
-					</div>
-				</div>
-			</div>
-		{/if}
 	{/if}
 </div>

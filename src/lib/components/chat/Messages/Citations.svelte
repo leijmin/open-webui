@@ -25,7 +25,7 @@
 
 	const setBrandFaviconFallback = (event: Event) => {
 		const target = event.currentTarget as HTMLImageElement;
-		target.src = '/static/logo.jpg';
+		target.src = '/logo.jpg';
 		target.className =
 			'size-4 rounded-md shrink-0 border border-white dark:border-gray-850 bg-white p-0.5 object-contain';
 	};

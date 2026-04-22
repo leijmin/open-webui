@@ -30,7 +30,7 @@
 				}}
 			>
 				<img
-					src="{WEBUI_BASE_URL}/static/logo.jpg"
+					src="{WEBUI_BASE_URL}/logo.jpg"
 					class="w-11 h-11 rounded-xl object-contain"
 					alt="logo"
 					draggable="false"
@@ -55,7 +55,7 @@
 			}}
 		>
 			<img
-				src="{WEBUI_BASE_URL}/static/logo.jpg"
+				src="{WEBUI_BASE_URL}/logo.jpg"
 				class="w-10 h-10 rounded-xl object-contain"
 				alt="logo"
 				draggable="false"

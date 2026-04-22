@@ -90,7 +90,7 @@
 		on:click={onClick}
 	>
 		<img
-			src={image || `${WEBUI_BASE_URL}/static/logo.jpg`}
+			src={image || `${WEBUI_BASE_URL}/logo.jpg`}
 			class="rounded-lg w-12 h-8 object-contain flex-shrink-0"
 			alt=""
 		/>
@@ -124,7 +124,7 @@
 					on:click={() => filesInputElement.click()}
 				>
 					<img
-						src={image || `${WEBUI_BASE_URL}/static/logo.jpg`}
+						src={image || `${WEBUI_BASE_URL}/logo.jpg`}
 						class="w-12 h-8 object-contain"
 						alt=""
 					/>

@@ -4,6 +4,7 @@ import base64
 import json
 import asyncio
 import logging
+from pathlib import Path
 
 from open_webui.models.groups import Groups
 from open_webui.models.models import (
@@ -41,6 +42,21 @@ from sqlalchemy.orm import Session
 log = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def _resolve_default_model_image_path() -> Optional[str]:
+    candidates = [
+        Path(STATIC_DIR) / "logo.png",
+        Path(STATIC_DIR) / "logo.jpg",
+        Path(STATIC_DIR) / "favicon.png",
+        Path(__file__).resolve().parents[3] / "static" / "logo.png",
+        Path(__file__).resolve().parents[3] / "static" / "logo.jpg",
+    ]
+
+    for candidate in candidates:
+        if candidate.exists():
+            return str(candidate)
+    return None
 
 
 def is_valid_model_id(model_id: str) -> bool:
@@ -417,9 +433,21 @@ def get_model_profile_image(id: str, user=Depends(get_verified_user)):
                 except Exception as e:
                     pass
 
-        return FileResponse(f"{STATIC_DIR}/logo.jpg")
+        fallback_path = _resolve_default_model_image_path()
+        if fallback_path:
+            return FileResponse(fallback_path)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=ERROR_MESSAGES.NOT_FOUND,
+        )
     else:
-        return FileResponse(f"{STATIC_DIR}/logo.jpg")
+        fallback_path = _resolve_default_model_image_path()
+        if fallback_path:
+            return FileResponse(fallback_path)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=ERROR_MESSAGES.NOT_FOUND,
+        )
 
 
 ############################

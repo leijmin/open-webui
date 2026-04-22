@@ -37,7 +37,7 @@
 		}
 	};
 
-	const defaultBrandLogo = `${WEBUI_BASE_URL}/static/logo.jpg`;
+	const defaultBrandLogo = `${WEBUI_BASE_URL}/logo.jpg`;
 
 	let profileImageUrl = defaultBrandLogo;
 	let description = '';

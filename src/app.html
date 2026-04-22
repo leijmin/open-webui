@@ -2,19 +2,19 @@
 <html lang="zh-CN">
 	<head>
 		<meta charset="utf-8" />
-		<link rel="icon" type="image/jpeg" href="/static/logo.jpg" crossorigin="use-credentials" />
+		<link rel="icon" type="image/jpeg" href="/logo.jpg" crossorigin="use-credentials" />
 		<link
 			rel="icon"
 			type="image/jpeg"
-			href="/static/logo.jpg"
+			href="/logo.jpg"
 			sizes="640x640"
 			crossorigin="use-credentials"
 		/>
-		<link rel="shortcut icon" href="/static/logo.jpg" crossorigin="use-credentials" />
+		<link rel="shortcut icon" href="/logo.jpg" crossorigin="use-credentials" />
 		<link
 			rel="apple-touch-icon"
 			sizes="640x640"
-			href="/static/logo.jpg"
+			href="/logo.jpg"
 			crossorigin="use-credentials"
 		/>
 		<link rel="manifest" href="/manifest.json" crossorigin="use-credentials" />
@@ -37,11 +37,18 @@
 		<script>
 			// On page load or when changing themes, best to add inline in `head` to avoid FOUC
 			(() => {
+				const ENABLE_SPLASH_SCREEN = true;
 				const metaThemeColorTag = document.querySelector('meta[name="theme-color"]');
 				const prefersDarkTheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+				const isAuthPage = window.location.pathname.startsWith('/auth');
 
-				if (!localStorage?.theme) {
-					localStorage.theme = 'system';
+				// Auth 页面统一浅色，避免启动遮罩继承历史主题而发绿/发暗
+				if (isAuthPage) {
+					localStorage.theme = 'light';
+				}
+
+				if (!localStorage?.theme || localStorage.theme === 'system') {
+					localStorage.theme = 'light';
 				}
 
 				if (localStorage.theme === 'system') {
@@ -78,19 +85,14 @@
 						}
 					}
 				});
-				const logo = document.createElement('img');
-				logo.id = 'logo';
-				logo.style =
-					'position: absolute; width: min(24rem, 78vw); height: auto; top: 43%; left: 50%; transform: translateX(-50%); display:block;';
-				logo.src = '/static/logo.jpg';
-
 				document.addEventListener('DOMContentLoaded', function () {
 					const splash = document.getElementById('splash-screen');
-					if (document.documentElement.classList.contains('her')) {
+					if (!ENABLE_SPLASH_SCREEN || isAuthPage || document.documentElement.classList.contains('her')) {
+						if (splash) {
+							splash.remove();
+						}
 						return;
 					}
-
-					if (splash) splash.prepend(logo);
 				});
 			})();
 		</script>
@@ -128,10 +130,11 @@
 				"
 			>
 				<img
-					id="logo-her"
-					style="width: min(28rem, 82vw); height: auto; border-radius: 1.5rem"
-					src="/static/logo.jpg"
+					id="splash-logo"
+					style="width: min(11rem, 40vw); height: auto; border-radius: 1rem"
+					src="/logo.png"
 					class="animate-pulse-fast"
+					alt="胡椒文旅"
 				/>
 
 				<div style="position: relative; width: min(18rem, 68vw); margin-top: 1rem">
@@ -174,7 +177,7 @@
 		}
 
 		#splash-screen {
-			background: #f3f8f6;
+			background: #ffffff;
 		}
 
 		html.dark #splash-screen {
@@ -185,25 +188,12 @@
 			background: #983724;
 		}
 
-		#logo-her {
-			display: none;
-		}
-
 		#progress-background {
 			display: none;
 		}
 
 		#progress-bar {
 			display: none;
-		}
-
-		html.her #logo {
-			display: none;
-		}
-
-		html.her #logo-her {
-			display: block;
-			filter: invert(1);
 		}
 
 		html.her #progress-background {
