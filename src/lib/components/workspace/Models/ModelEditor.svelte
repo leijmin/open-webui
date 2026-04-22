@@ -28,7 +28,7 @@
 	import LockClosed from '$lib/components/icons/LockClosed.svelte';
 	import { updateModelAccessGrants } from '$lib/apis/models';
 
-	const i18n = getContext('i18n');
+	const i18n: any = getContext('i18n');
 	const defaultBrandLogo = `${WEBUI_BASE_URL}/logo.jpg`;
 
 	export let onSubmit: Function;
@@ -96,7 +96,7 @@
 	let filterIds = [];
 	let defaultFilterIds = [];
 
-	let capabilities = { ...DEFAULT_CAPABILITIES };
+	let capabilities: Record<string, boolean | undefined> = { ...DEFAULT_CAPABILITIES };
 	let defaultFeatureIds = [];
 	let builtinTools = {};
 
@@ -803,7 +803,10 @@
 						{@const availableFeatures = Object.entries(capabilities)
 							.filter(
 								([key, value]) =>
-									value && ['web_search', 'code_interpreter', 'image_generation'].includes(key)
+									value &&
+									['web_search', 'code_interpreter', 'image_generation', 'video_generation'].includes(
+										key
+									)
 							)
 							.map(([key, value]) => key)}
 

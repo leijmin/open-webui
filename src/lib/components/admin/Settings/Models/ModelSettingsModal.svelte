@@ -2,7 +2,7 @@
 	import { toast } from 'svelte-sonner';
 
 	import { createEventDispatcher, getContext, onMount } from 'svelte';
-	const i18n = getContext('i18n');
+	const i18n = /** @type {any} */ (getContext('i18n'));
 	const dispatch = createEventDispatcher();
 
 	import { models, config as _config } from '$lib/stores';
@@ -57,7 +57,7 @@
 	let showDefaultParams = false;
 	let showDefaultPromptSuggestions = false;
 
-	let defaultCapabilities = {};
+	let defaultCapabilities = /** @type {Record<string, boolean | undefined>} */ ({});
 	let defaultFeatureIds = [];
 	let defaultParams = {};
 	let builtinTools = {};
@@ -317,9 +317,12 @@
 															.filter(
 																([key, value]) =>
 																	value &&
-																	['web_search', 'code_interpreter', 'image_generation'].includes(
-																		key
-																	)
+																	[
+																		'web_search',
+																		'code_interpreter',
+																		'image_generation',
+																		'video_generation'
+																	].includes(key)
 															)
 															.map(([key, value]) => key)}
 

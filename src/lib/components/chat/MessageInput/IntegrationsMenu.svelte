@@ -26,25 +26,33 @@
 	import Sparkles from '$lib/components/icons/Sparkles.svelte';
 	import GlobeAlt from '$lib/components/icons/GlobeAlt.svelte';
 	import Photo from '$lib/components/icons/Photo.svelte';
+	import Camera from '$lib/components/icons/Camera.svelte';
 	import Terminal from '$lib/components/icons/Terminal.svelte';
 	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
 
-	const i18n = getContext('i18n');
+	const i18n: any = getContext('i18n');
 
 	export let selectedToolIds: string[] = [];
 
 	export let selectedModels: string[] = [];
 	export let fileUploadCapableModels: string[] = [];
 
-	export let toggleFilters: { id: string; name: string; description?: string; icon?: string }[] =
-		[];
+	export let toggleFilters: {
+		id: string;
+		name: string;
+		description?: string;
+		icon?: string;
+		has_user_valves?: boolean;
+	}[] = [];
 	export let selectedFilterIds: string[] = [];
 
 	export let showWebSearchButton = false;
 	export let webSearchEnabled = false;
 	export let showImageGenerationButton = false;
 	export let imageGenerationEnabled = false;
+	export let showVideoGenerationButton = false;
+	export let videoGenerationEnabled = false;
 	export let showCodeInterpreterButton = false;
 	export let codeInterpreterEnabled = false;
 
@@ -55,7 +63,7 @@
 	let show = false;
 	let tab = '';
 
-	let tools = null;
+	let tools: Record<string, any> = {};
 
 	$: if (show) {
 		init();
@@ -72,7 +80,7 @@
 		}
 
 		if ($_tools) {
-			tools = $_tools.reduce((a, tool, i, arr) => {
+			tools = ($_tools as any[]).reduce((a, tool) => {
 				a[tool.id] = {
 					name: tool.name,
 					description: tool.meta.description,
@@ -80,12 +88,12 @@
 					...tool
 				};
 				return a;
-			}, {});
+			}, {} as Record<string, any>);
 		}
 
 		if ($toolServers) {
 			for (const serverIdx in $toolServers) {
-				const server = $toolServers[serverIdx];
+				const server = ($toolServers as any[])[serverIdx] as any;
 				if (server.info) {
 					tools[`direct_server:${serverIdx}`] = {
 						name: server?.info?.title ?? server.url,
@@ -258,6 +266,9 @@
 								class="flex w-full justify-between gap-2 items-center px-3 py-1.5 text-sm cursor-pointer rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50"
 								on:click={() => {
 									imageGenerationEnabled = !imageGenerationEnabled;
+									if (imageGenerationEnabled) {
+										videoGenerationEnabled = false;
+									}
 								}}
 							>
 								<div class="flex-1 truncate">
@@ -275,6 +286,39 @@
 										state={imageGenerationEnabled}
 										on:change={async (e) => {
 											const state = e.detail;
+											await tick();
+										}}
+									/>
+								</div>
+							</button>
+						</Tooltip>
+					{/if}
+
+					{#if showVideoGenerationButton}
+						<Tooltip content={$i18n.t('Generate a video')} placement="top-start">
+							<button
+								class="flex w-full justify-between gap-2 items-center px-3 py-1.5 text-sm cursor-pointer rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50"
+								on:click={() => {
+									videoGenerationEnabled = !videoGenerationEnabled;
+									if (videoGenerationEnabled) {
+										imageGenerationEnabled = false;
+									}
+								}}
+							>
+								<div class="flex-1 truncate">
+									<div class="flex flex-1 gap-2 items-center">
+										<div class="shrink-0">
+											<Camera className="size-4" strokeWidth="1.5" />
+										</div>
+
+										<div class=" truncate">{$i18n.t('Video')}</div>
+									</div>
+								</div>
+
+								<div class=" shrink-0">
+									<Switch
+										state={videoGenerationEnabled}
+										on:change={async () => {
 											await tick();
 										}}
 									/>

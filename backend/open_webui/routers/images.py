@@ -38,6 +38,11 @@ from open_webui.utils.images.comfyui import (
     comfyui_create_image,
     comfyui_edit_image,
 )
+from open_webui.utils.images.config import (
+    get_effective_image_edit_settings,
+    get_effective_image_generation_settings,
+    get_effective_image_generation_size,
+)
 from pydantic import BaseModel
 
 log = logging.getLogger(__name__)
@@ -75,11 +80,10 @@ def set_image_model(request: Request, model: str):
 
 def get_image_model(request):
     if request.app.state.config.IMAGE_GENERATION_ENGINE == "openai":
-        return (
-            request.app.state.config.IMAGE_GENERATION_MODEL
-            if request.app.state.config.IMAGE_GENERATION_MODEL
-            else "dall-e-2"
-        )
+        return get_effective_image_generation_settings(
+            request.app.state.config,
+            getattr(request.app.state, "OPENAI_MODELS", []),
+        )["model"]
     elif request.app.state.config.IMAGE_GENERATION_ENGINE == "gemini":
         return (
             request.app.state.config.IMAGE_GENERATION_MODEL
@@ -385,10 +389,11 @@ def get_models(request: Request, user=Depends(get_verified_user)):
     try:
         if request.app.state.config.IMAGE_GENERATION_ENGINE == "openai":
             return [
-                {"id": "dall-e-2", "name": "DALL·E 2"},
-                {"id": "dall-e-3", "name": "DALL·E 3"},
+                {"id": "gpt-image-2", "name": "GPT-IMAGE 2"},
                 {"id": "gpt-image-1", "name": "GPT-IMAGE 1"},
                 {"id": "gpt-image-1.5", "name": "GPT-IMAGE 1.5"},
+                {"id": "dall-e-3", "name": "DALL·E 3"},
+                {"id": "dall-e-2", "name": "DALL·E 2"},
             ]
         elif request.app.state.config.IMAGE_GENERATION_ENGINE == "gemini":
             return [
@@ -570,52 +575,47 @@ async def image_generations(
     # This is only relevant when the user has set IMAGE_SIZE to 'auto' with an
     # image model other than gpt-image-1, which is warned about on settings save
 
-    size = "512x512"
-    if (
-        request.app.state.config.IMAGE_SIZE
-        and "x" in request.app.state.config.IMAGE_SIZE
-    ):
-        size = request.app.state.config.IMAGE_SIZE
-
-    if form_data.size and "x" in form_data.size:
-        size = form_data.size
-
-    width, height = tuple(map(int, size.split("x")))
-
     metadata = metadata or {}
 
     model = get_image_model(request)
+    size = get_effective_image_generation_size(
+        request.app.state.config, model=model, requested_size=form_data.size
+    )
+
+    width, height = (512, 512)
+    if "x" in size:
+        width, height = tuple(map(int, size.split("x")))
 
     r = None
     try:
         if request.app.state.config.IMAGE_GENERATION_ENGINE == "openai":
+            generation_settings = get_effective_image_generation_settings(
+                request.app.state.config,
+                getattr(request.app.state, "OPENAI_MODELS", []),
+            )
 
             headers = {
-                "Authorization": f"Bearer {request.app.state.config.IMAGES_OPENAI_API_KEY}",
+                "Authorization": f"Bearer {generation_settings['openai_api_key']}",
                 "Content-Type": "application/json",
             }
 
             if ENABLE_FORWARD_USER_INFO_HEADERS:
                 headers = include_user_info_headers(headers, user)
 
-            url = f"{request.app.state.config.IMAGES_OPENAI_API_BASE_URL}/images/generations"
-            if request.app.state.config.IMAGES_OPENAI_API_VERSION:
-                url = f"{url}?api-version={request.app.state.config.IMAGES_OPENAI_API_VERSION}"
+            url = f"{generation_settings['openai_api_base_url']}/images/generations"
+            if generation_settings["openai_api_version"]:
+                url = f"{url}?api-version={generation_settings['openai_api_version']}"
 
             data = {
                 "model": model,
                 "prompt": form_data.prompt,
                 "n": form_data.n,
-                "size": (
-                    form_data.size
-                    if form_data.size
-                    else request.app.state.config.IMAGE_SIZE
-                ),
+                "size": size,
                 **(
                     {}
                     if re.match(
                         IMAGE_URL_RESPONSE_MODELS_REGEX_PATTERN,
-                        request.app.state.config.IMAGE_GENERATION_MODEL,
+                        model,
                     )
                     else {"response_format": "b64_json"}
                 ),
@@ -862,26 +862,26 @@ async def image_edits(
     metadata: Optional[dict] = None,
     user=Depends(get_verified_user),
 ):
+    edit_settings = get_effective_image_edit_settings(
+        request.app.state.config,
+        getattr(request.app.state, "OPENAI_MODELS", []),
+    )
     size = None
     width, height = None, None
     metadata = metadata or {}
 
-    if (
-        request.app.state.config.IMAGE_EDIT_SIZE
-        and "x" in request.app.state.config.IMAGE_EDIT_SIZE
-    ) or (form_data.size and "x" in form_data.size):
+    configured_size = edit_settings["size"]
+    if (configured_size and "x" in configured_size) or (
+        form_data.size and "x" in form_data.size
+    ):
         size = (
             form_data.size
             if form_data.size
-            else request.app.state.config.IMAGE_EDIT_SIZE
+            else configured_size
         )
         width, height = tuple(map(int, size.split("x")))
 
-    model = (
-        request.app.state.config.IMAGE_EDIT_MODEL
-        if form_data.model is None
-        else form_data.model
-    )
+    model = edit_settings["model"] if form_data.model is None else form_data.model
 
     try:
 
@@ -944,9 +944,9 @@ async def image_edits(
 
     r = None
     try:
-        if request.app.state.config.IMAGE_EDIT_ENGINE == "openai":
+        if edit_settings["engine"] == "openai":
             headers = {
-                "Authorization": f"Bearer {request.app.state.config.IMAGES_EDIT_OPENAI_API_KEY}",
+                "Authorization": f"Bearer {edit_settings['openai_api_key']}",
             }
 
             if ENABLE_FORWARD_USER_INFO_HEADERS:
@@ -964,7 +964,7 @@ async def image_edits(
                     {}
                     if re.match(
                         IMAGE_URL_RESPONSE_MODELS_REGEX_PATTERN,
-                        request.app.state.config.IMAGE_EDIT_MODEL,
+                        model,
                     )
                     else {"response_format": "b64_json"}
                 ),
@@ -978,13 +978,15 @@ async def image_edits(
                     files.append(get_image_file_item(img, "image[]"))
 
             url_search_params = ""
-            if request.app.state.config.IMAGES_EDIT_OPENAI_API_VERSION:
-                url_search_params += f"?api-version={request.app.state.config.IMAGES_EDIT_OPENAI_API_VERSION}"
+            if edit_settings["openai_api_version"]:
+                url_search_params += (
+                    f"?api-version={edit_settings['openai_api_version']}"
+                )
 
             # Use asyncio.to_thread for the requests.post call
             r = await asyncio.to_thread(
                 requests.post,
-                url=f"{request.app.state.config.IMAGES_EDIT_OPENAI_API_BASE_URL}/images/edits{url_search_params}",
+                url=f"{edit_settings['openai_api_base_url']}/images/edits{url_search_params}",
                 headers=headers,
                 files=files,
                 data=data,

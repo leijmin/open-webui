@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getContext, onMount } from 'svelte';
-	const i18n = getContext('i18n');
+	const i18n: any = getContext('i18n');
 
 	import Switch from '$lib/components/common/Switch.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
@@ -855,6 +855,22 @@
 				<Switch bind:state={permissions.features.image_generation} />
 			</div>
 			{#if defaultPermissions?.features?.image_generation && !permissions.features.image_generation}
+				<div>
+					<div class="text-xs text-gray-500">
+						{$i18n.t('This is a default user permission and will remain enabled.')}
+					</div>
+				</div>
+			{/if}
+		</div>
+
+		<div class="flex flex-col w-full">
+			<div class="flex w-full justify-between my-1">
+				<div class=" self-center text-xs font-medium">
+					{$i18n.t('Video Generation')}
+				</div>
+				<Switch bind:state={permissions.features.video_generation} />
+			</div>
+			{#if defaultPermissions?.features?.video_generation && !permissions.features.video_generation}
 				<div>
 					<div class="text-xs text-gray-500">
 						{$i18n.t('This is a default user permission and will remain enabled.')}

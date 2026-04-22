@@ -59,6 +59,7 @@ export const DEFAULT_PERMISSIONS = {
 		direct_tool_servers: false,
 		web_search: true,
 		image_generation: true,
+		video_generation: true,
 		code_interpreter: true,
 		memories: true
 	},

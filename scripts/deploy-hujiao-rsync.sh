@@ -16,6 +16,7 @@ SSH_BIN="${SSH_BIN:-ssh}"
 RSYNC_BIN="${RSYNC_BIN:-rsync}"
 CURL_BIN="${CURL_BIN:-curl}"
 GIT_BIN="${GIT_BIN:-git}"
+PNPM_BIN="${PNPM_BIN:-pnpm}"
 AUTO_COMMIT_BEFORE_DEPLOY="${AUTO_COMMIT_BEFORE_DEPLOY:-true}"
 AUTO_COMMIT_MESSAGE="${AUTO_COMMIT_MESSAGE:-chore: deploy hujiao branding snapshot}"
 
@@ -38,6 +39,7 @@ run_remote() {
 }
 
 require_cmd npm
+require_cmd "$PNPM_BIN"
 require_cmd "$SSH_BIN"
 require_cmd "$RSYNC_BIN"
 require_cmd "$CURL_BIN"
@@ -61,7 +63,7 @@ fi
 
 if [[ ! -d node_modules ]]; then
 	log "未检测到 node_modules，使用兼容模式安装前端依赖"
-	npm install --legacy-peer-deps
+	"$PNPM_BIN" install
 fi
 
 log "检查远端 venv 与 SQLite 兼容补丁"
@@ -100,7 +102,7 @@ command -v rsync >/dev/null 2>&1
 EOF
 
 log "构建前端资源"
-npm run build
+"$PNPM_BIN" run build
 
 RSYNC_EXCLUDES=(
 	"--exclude=.git"

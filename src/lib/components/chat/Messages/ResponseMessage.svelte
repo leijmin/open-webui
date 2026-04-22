@@ -671,7 +671,11 @@
 								{#each message.files as file}
 									<div>
 										{#if file.type === 'image' || (file?.content_type ?? '').startsWith('image/')}
-											<Image src={file.url} alt={message.content} />
+											<Image
+												src={file.url}
+												alt={message.content}
+												imageClassName="max-h-96 w-auto max-w-full rounded-lg object-contain"
+											/>
 										{:else}
 											<FileItem
 												item={file}

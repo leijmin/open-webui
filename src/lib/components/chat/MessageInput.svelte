@@ -79,6 +79,7 @@
 	import XMark from '../icons/XMark.svelte';
 	import GlobeAlt from '../icons/GlobeAlt.svelte';
 	import Photo from '../icons/Photo.svelte';
+	import Camera from '../icons/Camera.svelte';
 	import Wrench from '../icons/Wrench.svelte';
 	import Sparkles from '../icons/Sparkles.svelte';
 
@@ -113,34 +114,38 @@
 	import KnowledgePicker from './MessageInput/InputMenu/Knowledge.svelte';
 	import NotesPicker from './MessageInput/InputMenu/Notes.svelte';
 
-	const i18n = getContext('i18n');
+	const i18n: any = getContext('i18n');
 
-	export let onUpload: Function = (e) => {};
-	export let onChange: Function = () => {};
+	type ComposerFile = Record<string, any>;
+	type VariableValues = Record<string, any>;
 
-	export let createMessagePair: Function;
-	export let stopResponse: Function;
+	export let onUpload: (event?: Event) => void = () => {};
+	export let onChange: (payload?: Record<string, any>) => void = () => {};
+
+	export let createMessagePair: Function = () => {};
+	export let stopResponse: Function = () => {};
 
 	export let autoScroll = false;
 	export let generating = false;
 	export let uploadPending = false;
 
 	export let atSelectedModel: Model | undefined = undefined;
-	export let selectedModels: [''];
+	export let selectedModels: string[] = [''];
 
-	let selectedModelIds = [];
+	let selectedModelIds: string[] = [];
 	$: selectedModelIds = atSelectedModel !== undefined ? [atSelectedModel.id] : selectedModels;
 
-	export let history;
-	export let taskIds = null;
+	export let history: any;
+	export let taskIds: string[] | null = null;
 
 	export let prompt = '';
-	export let files = [];
+	export let files: ComposerFile[] = [];
 
-	export let selectedToolIds = [];
-	export let selectedFilterIds = [];
+	export let selectedToolIds: string[] = [];
+	export let selectedFilterIds: string[] = [];
 
 	export let imageGenerationEnabled = false;
+	export let videoGenerationEnabled = false;
 	export let webSearchEnabled = false;
 	export let codeInterpreterEnabled = false;
 
@@ -152,33 +157,41 @@
 	let referenceToggleGuard = new Map<string, number>();
 	let knowledgeReferenceLoading = false;
 	let notesReferenceLoading = false;
-	let visibleComposerFiles = [];
+	let visibleComposerFiles: ComposerFile[] = [];
 	let knowledgeReferencePreviewCount = 0;
 	let notesReferencePreviewCount = 0;
 	let knowledgeReferenceSelectionToken = 0;
 	let notesReferenceSelectionToken = 0;
-	let selectedKnowledgeReferences = [];
-	let selectedNoteReferences = [];
+	let selectedKnowledgeReferences: ComposerFile[] = [];
+	let selectedNoteReferences: ComposerFile[] = [];
+	let knowledgeReferenceButtonCount = 0;
+	let notesReferenceButtonCount = 0;
+	let knowledgeReferenceActive = false;
+	let notesReferenceActive = false;
 
 	export let messageQueue: { id: string; prompt: string; files: any[] }[] = [];
 	export let onQueueSendNow: (id: string) => void = () => {};
 	export let onQueueEdit: (id: string) => void = () => {};
 	export let onQueueDelete: (id: string) => void = () => {};
 
-	let inputContent = null;
+	let inputContent: any = null;
 
 	let showInputVariablesModal = false;
-	let inputVariablesModalCallback = (variableValues) => {};
-	let inputVariables = {};
-	let inputVariableValues = {};
+	let inputVariablesModalCallback: (variableValues: VariableValues) => void = () => {};
+	let inputVariables: VariableValues = {};
+	let inputVariableValues: VariableValues = {};
 
 	let showValvesModal = false;
 	let selectedValvesType = 'tool'; // 'tool' or 'function'
-	let selectedValvesItemId = null;
+	let selectedValvesItemId: string | null = null;
 	let integrationsMenuCloseOnOutsideClick = true;
 
 	$: if (!showValvesModal) {
 		integrationsMenuCloseOnOutsideClick = true;
+	}
+
+	$: if (imageGenerationEnabled && videoGenerationEnabled) {
+		imageGenerationEnabled = false;
 	}
 
 	$: onChange({
@@ -195,6 +208,7 @@
 		selectedToolIds,
 		selectedFilterIds,
 		imageGenerationEnabled,
+		videoGenerationEnabled,
 		webSearchEnabled,
 		codeInterpreterEnabled
 	});
@@ -482,13 +496,13 @@
 		return false;
 	}
 
-	let chatInputContainerElement;
-	let chatInputElement;
+	let chatInputContainerElement: HTMLDivElement | null = null;
+	let chatInputElement: any = null;
 
-	let filesInputElement;
-	let commandsElement;
+	let filesInputElement: HTMLInputElement | null = null;
+	let commandsElement: HTMLDivElement | null = null;
 
-	let inputFiles;
+	let inputFiles: FileList | null = null;
 
 	let showInputModal = false;
 
@@ -600,11 +614,6 @@
 		return items;
 	};
 
-	let knowledgeReferenceButtonCount = 0;
-	let notesReferenceButtonCount = 0;
-	let knowledgeReferenceActive = false;
-	let notesReferenceActive = false;
-
 	const selectAllKnowledgeReferences = async (preview = { items: [], total: null }) => {
 		const requestToken = ++knowledgeReferenceSelectionToken;
 		knowledgeReferenceLoading = true;
@@ -655,6 +664,44 @@
 		files = files.filter((file) => file !== targetFile);
 	};
 
+	const getVideoReferenceImages = () =>
+		files.filter((file) => file?.type === 'image' || file?.content_type?.startsWith('image/'));
+
+	const validateVideoGenerationSelection = () => {
+		if (!videoGenerationEnabled) {
+			return true;
+		}
+
+		if (getVideoReferenceImages().length > 1) {
+			toast.error($i18n.t('Only one reference image is supported for video generation.'));
+			return false;
+		}
+
+		return true;
+	};
+
+	const submitCurrentPrompt = () => {
+		if (!validateVideoGenerationSelection()) {
+			return;
+		}
+
+		dispatch('submit', prompt);
+	};
+
+	const setImageGenerationState = (enabled: boolean) => {
+		imageGenerationEnabled = enabled;
+		if (enabled) {
+			videoGenerationEnabled = false;
+		}
+	};
+
+	const setVideoGenerationState = (enabled: boolean) => {
+		videoGenerationEnabled = enabled;
+		if (enabled) {
+			imageGenerationEnabled = false;
+		}
+	};
+
 	export let dragged = false;
 	let shiftKey = false;
 
@@ -682,6 +729,14 @@
 	).filter(
 		(model) =>
 			$models.find((m) => m.id === model)?.info?.meta?.capabilities?.image_generation ?? true
+	);
+
+	let videoGenerationCapableModels = [];
+	$: videoGenerationCapableModels = (
+		atSelectedModel?.id ? [atSelectedModel.id] : selectedModels
+	).filter(
+		(model) =>
+			$models.find((m) => m.id === model)?.info?.meta?.capabilities?.video_generation ?? true
 	);
 
 	let codeInterpreterCapableModels = [];
@@ -713,6 +768,13 @@
 			imageGenerationCapableModels.length &&
 		$config?.features?.enable_image_generation &&
 		($_user.role === 'admin' || $_user?.permissions?.features?.image_generation);
+
+	let showVideoGenerationButton = false;
+	$: showVideoGenerationButton =
+		(atSelectedModel?.id ? [atSelectedModel.id] : selectedModels).length ===
+			videoGenerationCapableModels.length &&
+		$config?.features?.enable_video_generation &&
+		($_user.role === 'admin' || $_user?.permissions?.features?.video_generation);
 
 	let showCodeInterpreterButton = false;
 	$: showCodeInterpreterButton =
@@ -1330,7 +1392,7 @@
 								document.getElementById('chat-input')?.focus();
 
 								if ($settings?.speechAutoSend ?? false) {
-									dispatch('submit', prompt);
+									submitCurrentPrompt();
 								}
 							}}
 						/>
@@ -1339,7 +1401,7 @@
 						class="w-full flex flex-col gap-1.5 {recording ? 'hidden' : ''}"
 						on:submit|preventDefault={() => {
 							// check if selectedModels support image input
-							dispatch('submit', prompt);
+							submitCurrentPrompt();
 						}}
 					>
 						<button
@@ -1628,7 +1690,7 @@
 																if (enterPressed) {
 																	e.preventDefault();
 																	if (prompt !== '' || files.length > 0) {
-																		dispatch('submit', prompt);
+																		submitCurrentPrompt();
 																	}
 																}
 															}
@@ -1642,6 +1704,7 @@
 
 															webSearchEnabled = false;
 															imageGenerationEnabled = false;
+															videoGenerationEnabled = false;
 															codeInterpreterEnabled = false;
 														}
 													}}
@@ -1749,7 +1812,7 @@
 										</div>
 									</InputMenu>
 
-									{#if showWebSearchButton || showImageGenerationButton || showCodeInterpreterButton || showToolsButton || (toggleFilters && toggleFilters.length > 0)}
+									{#if showWebSearchButton || showImageGenerationButton || showVideoGenerationButton || showCodeInterpreterButton || showToolsButton || (toggleFilters && toggleFilters.length > 0)}
 										<div
 											class="flex self-center w-[1px] h-4 mx-1 bg-gray-200/50 dark:bg-gray-800/50"
 										/>
@@ -1759,11 +1822,13 @@
 											{toggleFilters}
 											{showWebSearchButton}
 											{showImageGenerationButton}
+											{showVideoGenerationButton}
 											{showCodeInterpreterButton}
 											bind:selectedToolIds
 											bind:selectedFilterIds
 											bind:webSearchEnabled
 											bind:imageGenerationEnabled
+											bind:videoGenerationEnabled
 											bind:codeInterpreterEnabled
 											closeOnOutsideClick={integrationsMenuCloseOnOutsideClick}
 											onShowValves={(e) => {
@@ -1891,13 +1956,31 @@
 											<Tooltip content={$i18n.t('Image')} placement="top">
 												<button
 													on:click|preventDefault={() =>
-														(imageGenerationEnabled = !imageGenerationEnabled)}
+														setImageGenerationState(!imageGenerationEnabled)}
 													type="button"
 													class="group p-[7px] flex gap-1.5 items-center text-sm rounded-full transition-colors duration-300 focus:outline-hidden max-w-full overflow-hidden {imageGenerationEnabled
 														? ' text-sky-500 dark:text-sky-300 bg-sky-50 hover:bg-sky-100 dark:bg-sky-400/10 dark:hover:bg-sky-700/10 border border-sky-200/40 dark:border-sky-500/20'
 														: 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 '}"
 												>
 													<Photo className="size-4" strokeWidth="1.75" />
+													<div class="hidden group-hover:block">
+														<XMark className="size-4" strokeWidth="1.75" />
+													</div>
+												</button>
+											</Tooltip>
+										{/if}
+
+										{#if videoGenerationEnabled}
+											<Tooltip content={$i18n.t('Video')} placement="top">
+												<button
+													on:click|preventDefault={() =>
+														setVideoGenerationState(!videoGenerationEnabled)}
+													type="button"
+													class="group p-[7px] flex gap-1.5 items-center text-sm rounded-full transition-colors duration-300 focus:outline-hidden max-w-full overflow-hidden {videoGenerationEnabled
+														? ' text-sky-500 dark:text-sky-300 bg-sky-50 hover:bg-sky-100 dark:bg-sky-400/10 dark:hover:bg-sky-700/10 border border-sky-200/40 dark:border-sky-500/20'
+														: 'bg-transparent text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 '}"
+												>
+													<Camera className="size-4" strokeWidth="1.75" />
 													<div class="hidden group-hover:block">
 														<XMark className="size-4" strokeWidth="1.75" />
 													</div>

@@ -63,7 +63,7 @@
 		displayFileHandler
 	} from '$lib/utils';
 	import { AudioQueue } from '$lib/utils/audio';
-	import { isImageGenerationOnlyModel } from '$lib/utils/modelCapabilities';
+	import { isImageGenerationOnlyModel, isVideoGenerationOnlyModel } from '$lib/utils/modelCapabilities';
 
 	import {
 		archiveChatById,
@@ -146,6 +146,7 @@
 	let selectedFilterIds = [];
 
 	let imageGenerationEnabled = false;
+	let videoGenerationEnabled = false;
 	let webSearchEnabled = false;
 	let codeInterpreterEnabled = false;
 
@@ -195,6 +196,7 @@
 		selectedFilterIds = [];
 		webSearchEnabled = false;
 		imageGenerationEnabled = false;
+		videoGenerationEnabled = false;
 
 		const storageChatInput = sessionStorage.getItem(
 			`chat-input${chatIdProp ? `-${chatIdProp}` : ''}`
@@ -242,6 +244,7 @@
 						selectedFilterIds = input.selectedFilterIds;
 						webSearchEnabled = input.webSearchEnabled;
 						imageGenerationEnabled = input.imageGenerationEnabled;
+						videoGenerationEnabled = input.videoGenerationEnabled;
 						codeInterpreterEnabled = input.codeInterpreterEnabled;
 					}
 				} catch (e) {}
@@ -302,6 +305,7 @@
 		selectedFilterIds = [];
 		webSearchEnabled = false;
 		imageGenerationEnabled = false;
+		videoGenerationEnabled = false;
 		codeInterpreterEnabled = false;
 
 		if (selectedModelIds.filter((id) => id).length > 0) {
@@ -326,6 +330,10 @@
 				$config?.features?.enable_image_generation &&
 				($user?.role === 'admin' || $user?.permissions?.features?.image_generation) &&
 				(model?.info?.meta?.capabilities?.['image_generation'] ?? true);
+			const canUseVideoGeneration =
+				$config?.features?.enable_video_generation &&
+				($user?.role === 'admin' || $user?.permissions?.features?.video_generation) &&
+				(model?.info?.meta?.capabilities?.['video_generation'] ?? true);
 
 			// Set Default Tools
 			if (model?.info?.meta?.toolIds) {
@@ -350,11 +358,21 @@
 			// Set Default Features
 			if (canUseImageGeneration && isImageGenerationOnlyModel(model)) {
 				imageGenerationEnabled = true;
+				videoGenerationEnabled = false;
+			}
+
+			if (canUseVideoGeneration && isVideoGenerationOnlyModel(model)) {
+				videoGenerationEnabled = true;
+				imageGenerationEnabled = false;
 			}
 
 			if (model?.info?.meta?.defaultFeatureIds) {
 				if (canUseImageGeneration) {
 					imageGenerationEnabled = model.info.meta.defaultFeatureIds.includes('image_generation');
+				}
+
+				if (canUseVideoGeneration) {
+					videoGenerationEnabled = model.info.meta.defaultFeatureIds.includes('video_generation');
 				}
 
 				if (
@@ -719,6 +737,7 @@
 				selectedFilterIds = [];
 				webSearchEnabled = false;
 				imageGenerationEnabled = false;
+				videoGenerationEnabled = false;
 				codeInterpreterEnabled = false;
 
 				try {
@@ -731,6 +750,7 @@
 						selectedFilterIds = input.selectedFilterIds;
 						webSearchEnabled = input.webSearchEnabled;
 						imageGenerationEnabled = input.imageGenerationEnabled;
+						videoGenerationEnabled = input.videoGenerationEnabled;
 						codeInterpreterEnabled = input.codeInterpreterEnabled;
 					}
 				} catch (e) {}
@@ -1152,6 +1172,12 @@
 
 		if ($page.url.searchParams.get('image-generation') === 'true') {
 			imageGenerationEnabled = true;
+			videoGenerationEnabled = false;
+		}
+
+		if ($page.url.searchParams.get('video-generation') === 'true') {
+			videoGenerationEnabled = true;
+			imageGenerationEnabled = false;
 		}
 
 		if ($page.url.searchParams.get('code-interpreter') === 'true') {
@@ -1987,7 +2013,14 @@
 				image_generation:
 					$config?.features?.enable_image_generation &&
 					($user?.role === 'admin' || $user?.permissions?.features?.image_generation)
-						? imageGenerationEnabled
+						? videoGenerationEnabled
+							? false
+							: imageGenerationEnabled
+						: false,
+				video_generation:
+					$config?.features?.enable_video_generation &&
+					($user?.role === 'admin' || $user?.permissions?.features?.video_generation)
+						? videoGenerationEnabled
 						: false,
 				code_interpreter:
 					$config?.features?.enable_code_interpreter &&
@@ -2811,6 +2844,7 @@
 									bind:selectedToolIds
 									bind:selectedFilterIds
 									bind:imageGenerationEnabled
+									bind:videoGenerationEnabled
 									bind:codeInterpreterEnabled
 									bind:webSearchEnabled
 									bind:atSelectedModel
@@ -2882,6 +2916,7 @@
 									bind:selectedToolIds
 									bind:selectedFilterIds
 									bind:imageGenerationEnabled
+									bind:videoGenerationEnabled
 									bind:codeInterpreterEnabled
 									bind:webSearchEnabled
 									bind:atSelectedModel

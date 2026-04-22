@@ -13,6 +13,11 @@
 		updateConfig,
 		verifyConfigUrl
 	} from '$lib/apis/images';
+	import {
+		getConfig as getVideoConfig,
+		getVideoGenerationModels,
+		updateConfig as updateVideoConfig
+	} from '$lib/apis/videos';
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
 	import Switch from '$lib/components/common/Switch.svelte';
@@ -21,12 +26,19 @@
 	import CodeEditorModal from '$lib/components/common/CodeEditorModal.svelte';
 	const dispatch = createEventDispatcher();
 
-	const i18n = getContext('i18n');
+	const i18n: any = getContext('i18n');
 
 	let loading = false;
 
-	let models = null;
-	let config = null;
+	type BasicModelOption = {
+		id: string;
+		name: string;
+	};
+
+	let models: BasicModelOption[] | null = null;
+	let config: any = null;
+	let videoModels: BasicModelOption[] | null = null;
+	let videoConfig: any = null;
 
 	let showComfyUIWorkflowEditor = false;
 	let REQUIRED_WORKFLOW_NODES = [
@@ -98,6 +110,13 @@
 		});
 	};
 
+	const getVideoModels = async () => {
+		videoModels = await getVideoGenerationModels(localStorage.token).catch((error) => {
+			toast.error(`${error}`);
+			return null;
+		});
+	};
+
 	const updateConfigHandler = async () => {
 		if (
 			config.IMAGE_GENERATION_ENGINE === 'automatic1111' &&
@@ -152,7 +171,7 @@
 		return null;
 	};
 
-	const validateJSON = (json) => {
+	const validateJSON = (json: string) => {
 		try {
 			const obj = JSON.parse(json);
 
@@ -161,6 +180,41 @@
 			}
 		} catch (e) {}
 		return false;
+	};
+
+	const updateVideoConfigHandler = async () => {
+		if (
+			videoConfig?.ENABLE_VIDEO_GENERATION &&
+			videoConfig.VIDEO_GENERATION_ENGINE === 'openai' &&
+			videoConfig.VIDEOS_OPENAI_API_KEY === ''
+		) {
+			toast.error($i18n.t('OpenAI API Key is required.'));
+			videoConfig.ENABLE_VIDEO_GENERATION = false;
+			return null;
+		}
+
+		const res = await updateVideoConfig(localStorage.token, {
+			...videoConfig,
+			VIDEOS_OPENAI_API_PARAMS:
+				typeof videoConfig.VIDEOS_OPENAI_API_PARAMS === 'string' &&
+				videoConfig.VIDEOS_OPENAI_API_PARAMS.trim() !== ''
+					? JSON.parse(videoConfig.VIDEOS_OPENAI_API_PARAMS)
+					: {}
+		}).catch((error) => {
+			toast.error(`${error}`);
+			return null;
+		});
+
+		if (res) {
+			if (res.ENABLE_VIDEO_GENERATION) {
+				backendConfig.set(await getBackendConfig());
+				getVideoModels();
+			}
+
+			return res;
+		}
+
+		return null;
 	};
 
 	const saveHandler = async () => {
@@ -201,7 +255,8 @@
 		}
 
 		const res = await updateConfigHandler();
-		if (res) {
+		const videoRes = videoConfig ? await updateVideoConfigHandler() : true;
+		if (res && videoRes) {
 			dispatch('save');
 		}
 
@@ -214,13 +269,23 @@
 				toast.error(`${error}`);
 				return null;
 			});
+			const videoRes = await getVideoConfig(localStorage.token).catch((error) => {
+				toast.error(`${error}`);
+				return null;
+			});
 
 			if (res) {
 				config = res;
 			}
+			if (videoRes) {
+				videoConfig = videoRes;
+			}
 
 			if (config.ENABLE_IMAGE_GENERATION) {
 				getModels();
+			}
+			if (videoConfig?.ENABLE_VIDEO_GENERATION) {
+				getVideoModels();
 			}
 
 			if (config.COMFYUI_WORKFLOW) {
@@ -232,7 +297,8 @@
 			}
 
 			REQUIRED_WORKFLOW_NODES = REQUIRED_WORKFLOW_NODES.map((node) => {
-				const n = config.COMFYUI_WORKFLOW_NODES.find((n) => n.type === node.type) ?? node;
+				const n =
+					config.COMFYUI_WORKFLOW_NODES.find((n: any) => n.type === node.type) ?? node;
 				console.debug(n);
 
 				return {
@@ -258,6 +324,12 @@
 				typeof config.IMAGES_OPENAI_API_PARAMS === 'object'
 					? JSON.stringify(config.IMAGES_OPENAI_API_PARAMS ?? {}, null, 2)
 					: config.IMAGES_OPENAI_API_PARAMS;
+			if (videoConfig) {
+				videoConfig.VIDEOS_OPENAI_API_PARAMS =
+					typeof videoConfig.VIDEOS_OPENAI_API_PARAMS === 'object'
+						? JSON.stringify(videoConfig.VIDEOS_OPENAI_API_PARAMS ?? {}, null, 2)
+						: videoConfig.VIDEOS_OPENAI_API_PARAMS;
+			}
 
 			config.AUTOMATIC1111_PARAMS =
 				typeof config.AUTOMATIC1111_PARAMS === 'object'
@@ -266,7 +338,8 @@
 
 			REQUIRED_EDIT_WORKFLOW_NODES = REQUIRED_EDIT_WORKFLOW_NODES.map((node) => {
 				const n =
-					config.IMAGES_EDIT_COMFYUI_WORKFLOW_NODES.find((n) => n.type === node.type) ?? node;
+					config.IMAGES_EDIT_COMFYUI_WORKFLOW_NODES.find((n: any) => n.type === node.type) ??
+					node;
 				console.debug(n);
 
 				return {
@@ -305,6 +378,175 @@
 						</div>
 					</div>
 				</div>
+
+				{#if videoConfig}
+					<div class="mb-3">
+						<div class=" mt-0.5 mb-2.5 text-base font-medium">
+							{$i18n.t('Video Generation')}
+						</div>
+
+						<hr class=" border-gray-100/30 dark:border-gray-850/30 my-2" />
+
+						<div class="mb-2.5">
+							<div class="flex w-full justify-between items-center">
+								<div class="text-xs pr-2">
+									<div class="">
+										{$i18n.t('Video Generation')}
+									</div>
+								</div>
+
+								<Switch bind:state={videoConfig.ENABLE_VIDEO_GENERATION} />
+							</div>
+						</div>
+
+						<div class="mb-2.5">
+							<div class="flex w-full justify-between items-center">
+								<div class="text-xs pr-2">
+									<div class="">
+										{$i18n.t('Video Generation Engine')}
+									</div>
+								</div>
+
+								<select
+									class="w-fit pr-8 cursor-pointer rounded-sm px-2 text-xs bg-transparent outline-hidden text-right"
+									bind:value={videoConfig.VIDEO_GENERATION_ENGINE}
+									placeholder={$i18n.t('Select Engine')}
+								>
+									<option value="openai">{$i18n.t('Default (Open AI)')}</option>
+								</select>
+							</div>
+						</div>
+
+						{#if videoConfig.ENABLE_VIDEO_GENERATION}
+							<div class="mb-2.5">
+								<div class="flex w-full justify-between items-center">
+									<div class="text-xs pr-2">
+										<div class="shrink-0">
+											{$i18n.t('Model')}
+										</div>
+									</div>
+
+									<Tooltip content={$i18n.t('Enter Model ID')} placement="top-start">
+										<input
+											list="video-model-list"
+											class="text-right text-sm bg-transparent outline-hidden max-w-full w-52"
+											bind:value={videoConfig.VIDEO_GENERATION_MODEL}
+											placeholder={$i18n.t('Select a model')}
+											required
+										/>
+
+										<datalist id="video-model-list">
+											{#each videoModels ?? [] as model}
+												<option value={model.id}>{model.name}</option>
+											{/each}
+										</datalist>
+									</Tooltip>
+								</div>
+							</div>
+
+							<div class="mb-2.5">
+								<div class="flex w-full justify-between items-center">
+									<div class="text-xs pr-2">
+										<div class="">
+											{$i18n.t('Default Duration (seconds)')}
+										</div>
+									</div>
+
+									<input
+										class="text-right text-sm bg-transparent outline-hidden max-w-full w-52"
+										type="number"
+										min="1"
+										step="1"
+										bind:value={videoConfig.VIDEO_GENERATION_DURATION}
+									/>
+								</div>
+							</div>
+						{/if}
+
+						{#if videoConfig.VIDEO_GENERATION_ENGINE === 'openai'}
+							<div class="mb-2.5">
+								<div class="flex w-full justify-between items-center">
+									<div class="text-xs pr-2 shrink-0">
+										<div class="">
+											{$i18n.t('OpenAI API Base URL')}
+										</div>
+									</div>
+
+									<div class="flex w-full">
+										<div class="flex-1">
+											<input
+												class="w-full text-sm bg-transparent outline-hidden text-right"
+												placeholder={$i18n.t('API Base URL')}
+												bind:value={videoConfig.VIDEOS_OPENAI_API_BASE_URL}
+											/>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="mb-2.5">
+								<div class="flex w-full justify-between items-center">
+									<div class="text-xs pr-2 shrink-0">
+										<div class="">
+											{$i18n.t('OpenAI API Key')}
+										</div>
+									</div>
+
+									<div class="flex w-full">
+										<div class="flex-1">
+											<SensitiveInput
+												inputClassName="text-right w-full"
+												placeholder={$i18n.t('API Key')}
+												bind:value={videoConfig.VIDEOS_OPENAI_API_KEY}
+												required={false}
+											/>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="mb-2.5">
+								<div class="flex w-full justify-between items-center">
+									<div class="text-xs pr-2 shrink-0">
+										<div class="">
+											{$i18n.t('OpenAI API Version')}
+										</div>
+									</div>
+
+									<div class="flex w-full">
+										<div class="flex-1">
+											<input
+												class="w-full text-sm bg-transparent outline-hidden text-right"
+												placeholder={$i18n.t('API Version')}
+												bind:value={videoConfig.VIDEOS_OPENAI_API_VERSION}
+											/>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="mb-2.5">
+								<div class="flex w-full justify-between items-center">
+									<div class="text-xs pr-2 shrink-0">
+										<div class="">
+											{$i18n.t('Additional Parameters')}
+										</div>
+									</div>
+								</div>
+								<div class="mt-1.5 flex w-full">
+									<div class="flex-1 mr-2">
+										<Textarea
+											className="rounded-lg w-full py-2 px-3 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-hidden"
+											bind:value={videoConfig.VIDEOS_OPENAI_API_PARAMS}
+											placeholder={$i18n.t('Enter additional parameters in JSON format')}
+											minSize={100}
+										/>
+									</div>
+								</div>
+							</div>
+						{/if}
+					</div>
+				{/if}
 
 				<div class="mb-3">
 					<div class=" mt-0.5 mb-2.5 text-base font-medium">{$i18n.t('Create Image')}</div>
@@ -679,12 +921,20 @@
 								type="file"
 								accept=".json"
 								on:change={(e) => {
-									const file = e.target.files[0];
+									const input = e.currentTarget as HTMLInputElement;
+									const file = input.files?.[0];
+									if (!file) {
+										return;
+									}
+
 									const reader = new FileReader();
 
-									reader.onload = (e) => {
-										config.COMFYUI_WORKFLOW = e.target.result;
-										e.target.value = null;
+									reader.onload = (loadEvent) => {
+										config.COMFYUI_WORKFLOW =
+											typeof loadEvent.target?.result === 'string'
+												? loadEvent.target.result
+												: '';
+										input.value = '';
 									};
 
 									reader.readAsText(file);
@@ -734,7 +984,7 @@
 									bind:show={showComfyUIWorkflowEditor}
 									value={config.COMFYUI_WORKFLOW}
 									lang="json"
-									onChange={(e) => {
+									onChange={(e: string) => {
 										config.COMFYUI_WORKFLOW = e;
 									}}
 									onSave={() => {
@@ -1092,12 +1342,20 @@
 								type="file"
 								accept=".json"
 								on:change={(e) => {
-									const file = e.target.files[0];
+									const input = e.currentTarget as HTMLInputElement;
+									const file = input.files?.[0];
+									if (!file) {
+										return;
+									}
+
 									const reader = new FileReader();
 
-									reader.onload = (e) => {
-										config.IMAGES_EDIT_COMFYUI_WORKFLOW = e.target.result;
-										e.target.value = null;
+									reader.onload = (loadEvent) => {
+										config.IMAGES_EDIT_COMFYUI_WORKFLOW =
+											typeof loadEvent.target?.result === 'string'
+												? loadEvent.target.result
+												: '';
+										input.value = '';
 									};
 
 									reader.readAsText(file);
@@ -1147,7 +1405,7 @@
 									bind:show={showComfyUIEditWorkflowEditor}
 									value={config.IMAGES_EDIT_COMFYUI_WORKFLOW}
 									lang="json"
-									onChange={(e) => {
+									onChange={(e: string) => {
 										config.IMAGES_EDIT_COMFYUI_WORKFLOW = e;
 									}}
 									onSave={() => {

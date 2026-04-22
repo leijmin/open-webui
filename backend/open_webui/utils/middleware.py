@@ -52,6 +52,11 @@ from open_webui.routers.images import (
     image_edits,
     EditImageForm,
 )
+from open_webui.utils.images.config import can_use_image_edit
+from open_webui.routers.videos import (
+    video_generations,
+    CreateVideoForm,
+)
 from open_webui.routers.pipelines import (
     process_pipeline_inlet_filter,
     process_pipeline_outlet_filter,
@@ -1709,7 +1714,7 @@ async def chat_image_generation_handler(
         await __event_emitter__(
             {
                 "type": "status",
-                "data": {"description": "Creating image", "done": False},
+                "data": {"description": "正在生成图片", "done": False},
             }
         )
 
@@ -1733,63 +1738,80 @@ async def chat_image_generation_handler(
 
     system_message_content = ""
 
-    if len(input_images) > 0 and request.app.state.config.ENABLE_IMAGE_EDIT:
-        # Edit image(s)
-        try:
-            images = await image_edits(
-                request=request,
-                form_data=EditImageForm(**{"prompt": prompt, "image": input_images}),
-                metadata={
-                    "chat_id": metadata.get("chat_id", None),
-                    "message_id": metadata.get("message_id", None),
-                },
-                user=user,
-            )
-
-            await __event_emitter__(
-                {
-                    "type": "status",
-                    "data": {"description": "Image created", "done": True},
-                }
-            )
-
-            await __event_emitter__(
-                {
-                    "type": "files",
-                    "data": {
-                        "files": [
-                            {
-                                "type": "image",
-                                "url": image["url"],
-                            }
-                            for image in images
-                        ]
+    if len(input_images) > 0:
+        if can_use_image_edit(
+            request.app.state.config, getattr(request.app.state, "OPENAI_MODELS", [])
+        ):
+            # Edit image(s)
+            try:
+                images = await image_edits(
+                    request=request,
+                    form_data=EditImageForm(**{"prompt": prompt, "image": input_images}),
+                    metadata={
+                        "chat_id": metadata.get("chat_id", None),
+                        "message_id": metadata.get("message_id", None),
                     },
-                }
-            )
+                    user=user,
+                )
 
-            system_message_content = "<context>The requested image has been edited and created and is now being shown to the user. Let them know that it has been generated.</context>"
-        except Exception as e:
-            log.debug(e)
+                await __event_emitter__(
+                    {
+                        "type": "status",
+                        "data": {"description": "图片已生成", "done": True},
+                    }
+                )
 
-            error_message = ""
-            if isinstance(e, HTTPException):
-                if e.detail and isinstance(e.detail, dict):
-                    error_message = e.detail.get("message", str(e.detail))
-                else:
-                    error_message = str(e.detail)
+                await __event_emitter__(
+                    {
+                        "type": "files",
+                        "data": {
+                            "files": [
+                                {
+                                    "type": "image",
+                                    "url": image["url"],
+                                }
+                                for image in images
+                            ]
+                        },
+                    }
+                )
 
+                system_message_content = "<context>The requested image has been edited and created and is now being shown to the user. Let them know that it has been generated.</context>"
+            except Exception as e:
+                log.debug(e)
+
+                error_message = ""
+                if isinstance(e, HTTPException):
+                    if e.detail and isinstance(e.detail, dict):
+                        error_message = e.detail.get("message", str(e.detail))
+                    else:
+                        error_message = str(e.detail)
+
+                await __event_emitter__(
+                    {
+                        "type": "status",
+                        "data": {
+                            "description": "图片生成失败，请稍后重试",
+                            "done": True,
+                            "error": True,
+                        },
+                    }
+                )
+
+                system_message_content = f"<context>Image generation was attempted but failed. The system is currently unable to generate the image. Tell the user that the following error occurred: {error_message}</context>"
+        else:
             await __event_emitter__(
                 {
                     "type": "status",
                     "data": {
-                        "description": f"An error occurred while generating an image",
+                        "description": "已收到参考图，但当前图生图服务不可用",
                         "done": True,
+                        "error": True,
                     },
                 }
             )
 
-            system_message_content = f"<context>Image generation was attempted but failed. The system is currently unable to generate the image. Tell the user that the following error occurred: {error_message}</context>"
+            system_message_content = "<context>The user uploaded a reference image, but image editing is not available right now. Tell the user in concise Chinese that the reference image was received, but the image-to-image service is not configured correctly yet.</context>"
 
     else:
         # Create image(s)
@@ -1838,7 +1860,7 @@ async def chat_image_generation_handler(
             await __event_emitter__(
                 {
                     "type": "status",
-                    "data": {"description": "Image created", "done": True},
+                    "data": {"description": "图片已生成", "done": True},
                 }
             )
 
@@ -1872,13 +1894,140 @@ async def chat_image_generation_handler(
                 {
                     "type": "status",
                     "data": {
-                        "description": f"An error occurred while generating an image",
+                        "description": "图片生成失败，请稍后重试",
                         "done": True,
+                        "error": True,
                     },
                 }
             )
 
             system_message_content = f"<context>Image generation was attempted but failed because of an error. The system is currently unable to generate the image. Tell the user that the following error occurred: {error_message}</context>"
+
+    if system_message_content:
+        form_data["messages"] = add_or_update_system_message(
+            system_message_content, form_data["messages"]
+        )
+
+    return form_data
+
+
+async def chat_video_generation_handler(
+    request: Request, form_data: dict, extra_params: dict, user
+):
+    metadata = extra_params.get("__metadata__", {})
+    chat_id = metadata.get("chat_id", None)
+    __event_emitter__ = extra_params.get("__event_emitter__", None)
+
+    if not chat_id or not isinstance(chat_id, str) or not __event_emitter__:
+        return form_data
+
+    if chat_id.startswith("local:"):
+        message_list = form_data.get("messages", [])
+    else:
+        chat = Chats.get_chat_by_id_and_user_id(chat_id, user.id)
+        await __event_emitter__(
+            {
+                "type": "status",
+                "data": {"description": "正在提交视频任务", "done": False},
+            }
+        )
+
+        messages_map = chat.chat.get("history", {}).get("messages", {})
+        message_id = chat.chat.get("history", {}).get("currentId")
+        message_list = get_message_list(messages_map, message_id)
+
+    prompt = get_last_user_message(message_list)
+    message_images = get_images_from_messages(message_list)
+
+    input_images = []
+    for images in message_images:
+        if not images:
+            continue
+        input_images.extend(images)
+        break
+
+    system_message_content = ""
+
+    try:
+        if len(input_images) > 1:
+            raise HTTPException(
+                status_code=400,
+                detail="当前仅支持一张参考图片生成视频",
+            )
+
+        await __event_emitter__(
+            {
+                "type": "status",
+                "data": {"description": "视频生成中，请稍候", "done": False},
+            }
+        )
+
+        videos = await video_generations(
+            request=request,
+            form_data=CreateVideoForm(
+                **{"prompt": prompt, **({"images": input_images} if input_images else {})}
+            ),
+            metadata={
+                "chat_id": metadata.get("chat_id", None),
+                "message_id": metadata.get("message_id", None),
+            },
+            user=user,
+        )
+
+        await __event_emitter__(
+            {
+                "type": "status",
+                "data": {"description": "正在获取视频结果", "done": False},
+            }
+        )
+
+        await __event_emitter__(
+            {
+                "type": "status",
+                "data": {"description": "视频已生成", "done": True},
+            }
+        )
+
+        await __event_emitter__(
+            {
+                "type": "files",
+                "data": {
+                    "files": [
+                        {
+                            "type": "video",
+                            "url": video["url"],
+                        }
+                        for video in videos
+                    ]
+                },
+            }
+        )
+
+        system_message_content = "<context>视频已经生成成功，并且结果已经展示给用户。请用简短中文告诉用户视频已生成完成。</context>"
+    except Exception as e:
+        log.debug(e)
+
+        error_message = ""
+        if isinstance(e, HTTPException):
+            if e.detail and isinstance(e.detail, dict):
+                error_message = e.detail.get("message", str(e.detail))
+            else:
+                error_message = str(e.detail)
+        else:
+            error_message = str(e)
+
+        await __event_emitter__(
+            {
+                "type": "status",
+                "data": {
+                    "description": "视频生成失败，请稍后重试",
+                    "done": True,
+                    "error": True,
+                },
+            }
+        )
+
+        system_message_content = f"<context>视频生成已经尝试执行，但当前失败。请用简短中文告诉用户视频生成失败，并转述这个错误信息：{error_message}</context>"
 
     if system_message_content:
         form_data["messages"] = add_or_update_system_message(
@@ -2363,6 +2512,13 @@ async def process_chat_payload(request, form_data, user, metadata, model):
             # Skip forced image generation when native FC is enabled - model can use generate_image tool
             if metadata.get("params", {}).get("function_calling") != "native":
                 form_data = await chat_image_generation_handler(
+                    request, form_data, extra_params, user
+                )
+
+        if "video_generation" in features and features["video_generation"]:
+            # Skip forced video generation when native FC is enabled - model can rely on native tools
+            if metadata.get("params", {}).get("function_calling") != "native":
+                form_data = await chat_video_generation_handler(
                     request, form_data, extra_params, user
                 )
 

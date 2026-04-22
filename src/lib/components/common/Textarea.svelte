@@ -1,21 +1,21 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 
-	export let value = '';
-	export let placeholder = '';
-	export let rows = 1;
-	export let minSize = null;
-	export let maxSize = null;
-	export let required = false;
-	export let readonly = false;
-	export let className =
+	export let value: string = '';
+	export let placeholder: string = '';
+	export let rows: number = 1;
+	export let minSize: number | null = null;
+	export let maxSize: number | null = null;
+	export let required: boolean = false;
+	export let readonly: boolean = false;
+	export let className: string =
 		'w-full rounded-lg px-3.5 py-2 text-sm bg-gray-50 dark:text-gray-300 dark:bg-gray-850 outline-hidden  h-full';
-	export let ariaLabel = null;
+	export let ariaLabel: string | null = null;
 
-	export let onInput = () => {};
-	export let onBlur = () => {};
+	export let onInput: (event: Event) => void = () => {};
+	export let onBlur: (event: FocusEvent) => void = () => {};
 
-	let textareaElement;
+	let textareaElement: HTMLTextAreaElement | null = null;
 
 	// Adjust height on mount and after setting the element.
 	onMount(async () => {

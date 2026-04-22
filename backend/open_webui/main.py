@@ -72,6 +72,7 @@ from open_webui.routers import (
     analytics,
     audio,
     images,
+    videos,
     ollama,
     openai,
     retrieval,
@@ -160,8 +161,16 @@ from open_webui.config import (
     COMFYUI_API_KEY,
     COMFYUI_WORKFLOW,
     COMFYUI_WORKFLOW_NODES,
+    ENABLE_VIDEO_GENERATION,
     ENABLE_IMAGE_GENERATION,
     ENABLE_IMAGE_PROMPT_GENERATION,
+    VIDEO_GENERATION_ENGINE,
+    VIDEO_GENERATION_MODEL,
+    VIDEO_GENERATION_DURATION,
+    VIDEOS_OPENAI_API_BASE_URL,
+    VIDEOS_OPENAI_API_VERSION,
+    VIDEOS_OPENAI_API_KEY,
+    VIDEOS_OPENAI_API_PARAMS,
     IMAGE_GENERATION_ENGINE,
     IMAGE_GENERATION_MODEL,
     IMAGE_SIZE,
@@ -1202,6 +1211,22 @@ app.state.config.CODE_INTERPRETER_JUPYTER_TIMEOUT = CODE_INTERPRETER_JUPYTER_TIM
 
 ########################################
 #
+# VIDEOS
+#
+########################################
+
+app.state.config.ENABLE_VIDEO_GENERATION = ENABLE_VIDEO_GENERATION
+app.state.config.VIDEO_GENERATION_ENGINE = VIDEO_GENERATION_ENGINE
+app.state.config.VIDEO_GENERATION_MODEL = VIDEO_GENERATION_MODEL
+app.state.config.VIDEO_GENERATION_DURATION = VIDEO_GENERATION_DURATION
+app.state.config.VIDEOS_OPENAI_API_BASE_URL = VIDEOS_OPENAI_API_BASE_URL
+app.state.config.VIDEOS_OPENAI_API_VERSION = VIDEOS_OPENAI_API_VERSION
+app.state.config.VIDEOS_OPENAI_API_KEY = VIDEOS_OPENAI_API_KEY
+app.state.config.VIDEOS_OPENAI_API_PARAMS = VIDEOS_OPENAI_API_PARAMS
+
+
+########################################
+#
 # IMAGES
 #
 ########################################
@@ -1530,6 +1555,7 @@ app.include_router(openai.router, prefix="/openai", tags=["openai"])
 
 app.include_router(pipelines.router, prefix="/api/v1/pipelines", tags=["pipelines"])
 app.include_router(tasks.router, prefix="/api/v1/tasks", tags=["tasks"])
+app.include_router(videos.router, prefix="/api/v1/videos", tags=["videos"])
 app.include_router(images.router, prefix="/api/v1/images", tags=["images"])
 
 app.include_router(audio.router, prefix="/api/v1/audio", tags=["audio"])
@@ -2161,6 +2187,7 @@ async def get_app_config(request: Request):
                     "enable_code_execution": app.state.config.ENABLE_CODE_EXECUTION,
                     "enable_code_interpreter": app.state.config.ENABLE_CODE_INTERPRETER,
                     "enable_image_generation": app.state.config.ENABLE_IMAGE_GENERATION,
+                    "enable_video_generation": app.state.config.ENABLE_VIDEO_GENERATION,
                     "enable_autocomplete_generation": app.state.config.ENABLE_AUTOCOMPLETE_GENERATION,
                     "enable_community_sharing": app.state.config.ENABLE_COMMUNITY_SHARING,
                     "enable_message_rating": app.state.config.ENABLE_MESSAGE_RATING,

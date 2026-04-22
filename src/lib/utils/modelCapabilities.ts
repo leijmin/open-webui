@@ -21,6 +21,9 @@ const getModelType = (model?: ModelCapabilityShape | null) =>
 const isImageEndpointType = (endpointType: string) =>
 	endpointType.includes('image') || endpointType.includes('图像');
 
+const isVideoEndpointType = (endpointType: string) =>
+	endpointType.includes('video') || endpointType.includes('视频');
+
 const isTextGenerationEndpointType = (endpointType: string) =>
 	['chat', 'response', 'completion', 'text-generation', 'text'].some((marker) =>
 		endpointType.includes(marker)
@@ -37,4 +40,18 @@ export const isImageGenerationOnlyModel = (model?: ModelCapabilityShape | null) 
 	const supportsTextGeneration = supportedEndpointTypes.some(isTextGenerationEndpointType);
 
 	return supportsImageGeneration && !supportsTextGeneration;
+};
+
+export const isVideoGenerationOnlyModel = (model?: ModelCapabilityShape | null) => {
+	const supportedEndpointTypes = getSupportedEndpointTypes(model);
+	const modelType = getModelType(model);
+
+	const supportsVideoGeneration =
+		supportedEndpointTypes.some(isVideoEndpointType) ||
+		modelType.includes('video') ||
+		modelType.includes('视频') ||
+		modelType.includes('音视频');
+	const supportsTextGeneration = supportedEndpointTypes.some(isTextGenerationEndpointType);
+
+	return supportsVideoGeneration && !supportsTextGeneration;
 };

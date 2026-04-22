@@ -4,9 +4,22 @@
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import { marked } from 'marked';
 
-	const i18n = getContext('i18n');
+	const i18n: any = getContext('i18n');
 
-	const capabilityLabels = {
+	type CapabilityKey =
+		| 'vision'
+		| 'file_upload'
+		| 'file_context'
+		| 'web_search'
+		| 'image_generation'
+		| 'video_generation'
+		| 'code_interpreter'
+		| 'usage'
+		| 'citations'
+		| 'status_updates'
+		| 'builtin_tools';
+
+	const capabilityLabels: Record<CapabilityKey, { label: string; description: string }> = {
 		vision: {
 			label: $i18n.t('Vision'),
 			description: $i18n.t('Model accepts image inputs')
@@ -26,6 +39,10 @@
 		image_generation: {
 			label: $i18n.t('Image Generation'),
 			description: $i18n.t('Model can generate images based on text prompts')
+		},
+		video_generation: {
+			label: $i18n.t('Video Generation'),
+			description: $i18n.t('Model can generate videos based on text or one reference image')
 		},
 		code_interpreter: {
 			label: $i18n.t('Code Interpreter'),
@@ -53,21 +70,10 @@
 		}
 	};
 
-	export let capabilities: {
-		file_context?: boolean;
-		vision?: boolean;
-		file_upload?: boolean;
-		web_search?: boolean;
-		image_generation?: boolean;
-		code_interpreter?: boolean;
-		usage?: boolean;
-		citations?: boolean;
-		status_updates?: boolean;
-		builtin_tools?: boolean;
-	} = {};
+	export let capabilities: Partial<Record<CapabilityKey, boolean>> = {};
 
 	// Hide file_context when file_upload is disabled
-	$: visibleCapabilities = Object.keys(capabilityLabels).filter((cap) => {
+	$: visibleCapabilities = (Object.keys(capabilityLabels) as CapabilityKey[]).filter((cap) => {
 		if (cap === 'file_context' && !capabilities.file_upload) {
 			return false;
 		}

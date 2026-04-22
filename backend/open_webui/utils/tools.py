@@ -51,6 +51,7 @@ from open_webui.env import (
     FORWARD_SESSION_INFO_HEADER_MESSAGE_ID,
 )
 from open_webui.utils.headers import include_user_info_headers
+from open_webui.utils.images.config import can_use_image_edit
 from open_webui.tools.builtin import (
     search_web,
     fetch_url,
@@ -494,7 +495,9 @@ def get_builtin_tools(
         builtin_functions.append(generate_image)
     if (
         is_builtin_tool_enabled("image_generation")
-        and getattr(request.app.state.config, "ENABLE_IMAGE_EDIT", False)
+        and can_use_image_edit(
+            request.app.state.config, getattr(request.app.state, "OPENAI_MODELS", [])
+        )
         and get_model_capability("image_generation")
         and features.get("image_generation")
     ):

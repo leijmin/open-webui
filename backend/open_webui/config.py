@@ -1169,6 +1169,17 @@ except Exception:
     pass
 OPENAI_API_BASE_URL = "https://api.openai.com/v1"
 
+DEFAULT_OPENAI_CONNECTION_BASE_URL = (
+    OPENAI_API_BASE_URLS.value[0]
+    if len(getattr(OPENAI_API_BASE_URLS, "value", []) or []) > 0
+    else "https://api.openai.com/v1"
+)
+DEFAULT_OPENAI_CONNECTION_API_KEY = (
+    OPENAI_API_KEYS.value[0]
+    if len(getattr(OPENAI_API_KEYS, "value", []) or []) > 0
+    else OPENAI_API_KEY
+)
+
 
 ####################################
 # MODELS
@@ -1576,6 +1587,11 @@ USER_PERMISSIONS_FEATURES_IMAGE_GENERATION = (
     == "true"
 )
 
+USER_PERMISSIONS_FEATURES_VIDEO_GENERATION = (
+    os.environ.get("USER_PERMISSIONS_FEATURES_VIDEO_GENERATION", "True").lower()
+    == "true"
+)
+
 USER_PERMISSIONS_FEATURES_CODE_INTERPRETER = (
     os.environ.get("USER_PERMISSIONS_FEATURES_CODE_INTERPRETER", "True").lower()
     == "true"
@@ -1670,6 +1686,7 @@ DEFAULT_USER_PERMISSIONS = {
         # Chat features
         "web_search": USER_PERMISSIONS_FEATURES_WEB_SEARCH,
         "image_generation": USER_PERMISSIONS_FEATURES_IMAGE_GENERATION,
+        "video_generation": USER_PERMISSIONS_FEATURES_VIDEO_GENERATION,
         "code_interpreter": USER_PERMISSIONS_FEATURES_CODE_INTERPRETER,
         "memories": USER_PERMISSIONS_FEATURES_MEMORIES,
     },
@@ -3679,6 +3696,64 @@ YOUCOM_API_KEY = PersistentConfig(
 )
 
 ####################################
+# Videos
+####################################
+
+ENABLE_VIDEO_GENERATION = PersistentConfig(
+    "ENABLE_VIDEO_GENERATION",
+    "video_generation.enable",
+    os.environ.get("ENABLE_VIDEO_GENERATION", "").lower() == "true",
+)
+
+VIDEO_GENERATION_ENGINE = PersistentConfig(
+    "VIDEO_GENERATION_ENGINE",
+    "video_generation.engine",
+    os.getenv("VIDEO_GENERATION_ENGINE", "openai"),
+)
+
+VIDEO_GENERATION_MODEL = PersistentConfig(
+    "VIDEO_GENERATION_MODEL",
+    "video_generation.model",
+    os.getenv("VIDEO_GENERATION_MODEL", "veo3.1-fast"),
+)
+
+VIDEO_GENERATION_DURATION = PersistentConfig(
+    "VIDEO_GENERATION_DURATION",
+    "video_generation.duration",
+    int(os.getenv("VIDEO_GENERATION_DURATION", 5)),
+)
+
+VIDEOS_OPENAI_API_BASE_URL = PersistentConfig(
+    "VIDEOS_OPENAI_API_BASE_URL",
+    "video_generation.openai.api_base_url",
+    os.getenv("VIDEOS_OPENAI_API_BASE_URL", DEFAULT_OPENAI_CONNECTION_BASE_URL),
+)
+
+VIDEOS_OPENAI_API_VERSION = PersistentConfig(
+    "VIDEOS_OPENAI_API_VERSION",
+    "video_generation.openai.api_version",
+    os.getenv("VIDEOS_OPENAI_API_VERSION", ""),
+)
+
+VIDEOS_OPENAI_API_KEY = PersistentConfig(
+    "VIDEOS_OPENAI_API_KEY",
+    "video_generation.openai.api_key",
+    os.getenv("VIDEOS_OPENAI_API_KEY", DEFAULT_OPENAI_CONNECTION_API_KEY),
+)
+
+videos_openai_params = os.getenv("VIDEOS_OPENAI_PARAMS", "")
+try:
+    videos_openai_params = json.loads(videos_openai_params)
+except json.JSONDecodeError:
+    videos_openai_params = {}
+
+VIDEOS_OPENAI_API_PARAMS = PersistentConfig(
+    "VIDEOS_OPENAI_API_PARAMS",
+    "video_generation.openai.params",
+    videos_openai_params,
+)
+
+####################################
 # Images
 ####################################
 
@@ -3891,7 +3966,7 @@ COMFYUI_WORKFLOW_NODES = PersistentConfig(
 IMAGES_OPENAI_API_BASE_URL = PersistentConfig(
     "IMAGES_OPENAI_API_BASE_URL",
     "image_generation.openai.api_base_url",
-    os.getenv("IMAGES_OPENAI_API_BASE_URL", OPENAI_API_BASE_URL),
+    os.getenv("IMAGES_OPENAI_API_BASE_URL", DEFAULT_OPENAI_CONNECTION_BASE_URL),
 )
 IMAGES_OPENAI_API_VERSION = PersistentConfig(
     "IMAGES_OPENAI_API_VERSION",
@@ -3902,7 +3977,7 @@ IMAGES_OPENAI_API_VERSION = PersistentConfig(
 IMAGES_OPENAI_API_KEY = PersistentConfig(
     "IMAGES_OPENAI_API_KEY",
     "image_generation.openai.api_key",
-    os.getenv("IMAGES_OPENAI_API_KEY", OPENAI_API_KEY),
+    os.getenv("IMAGES_OPENAI_API_KEY", DEFAULT_OPENAI_CONNECTION_API_KEY),
 )
 
 images_openai_params = os.getenv("IMAGES_OPENAI_PARAMS", "")
@@ -3937,7 +4012,7 @@ IMAGES_GEMINI_ENDPOINT_METHOD = PersistentConfig(
 ENABLE_IMAGE_EDIT = PersistentConfig(
     "ENABLE_IMAGE_EDIT",
     "images.edit.enable",
-    os.environ.get("ENABLE_IMAGE_EDIT", "").lower() == "true",
+    os.environ.get("ENABLE_IMAGE_EDIT", "true").lower() == "true",
 )
 
 IMAGE_EDIT_ENGINE = PersistentConfig(
@@ -3959,7 +4034,7 @@ IMAGE_EDIT_SIZE = PersistentConfig(
 IMAGES_EDIT_OPENAI_API_BASE_URL = PersistentConfig(
     "IMAGES_EDIT_OPENAI_API_BASE_URL",
     "images.edit.openai.api_base_url",
-    os.getenv("IMAGES_EDIT_OPENAI_API_BASE_URL", OPENAI_API_BASE_URL),
+    os.getenv("IMAGES_EDIT_OPENAI_API_BASE_URL", DEFAULT_OPENAI_CONNECTION_BASE_URL),
 )
 IMAGES_EDIT_OPENAI_API_VERSION = PersistentConfig(
     "IMAGES_EDIT_OPENAI_API_VERSION",
@@ -3970,7 +4045,7 @@ IMAGES_EDIT_OPENAI_API_VERSION = PersistentConfig(
 IMAGES_EDIT_OPENAI_API_KEY = PersistentConfig(
     "IMAGES_EDIT_OPENAI_API_KEY",
     "images.edit.openai.api_key",
-    os.getenv("IMAGES_EDIT_OPENAI_API_KEY", OPENAI_API_KEY),
+    os.getenv("IMAGES_EDIT_OPENAI_API_KEY", DEFAULT_OPENAI_CONNECTION_API_KEY),
 )
 
 IMAGES_EDIT_GEMINI_API_BASE_URL = PersistentConfig(
