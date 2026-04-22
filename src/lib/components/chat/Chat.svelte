@@ -63,6 +63,7 @@
 		displayFileHandler
 	} from '$lib/utils';
 	import { AudioQueue } from '$lib/utils/audio';
+	import { isImageGenerationOnlyModel } from '$lib/utils/modelCapabilities';
 
 	import {
 		archiveChatById,
@@ -321,6 +322,11 @@
 
 		const model = atSelectedModel ?? $models.find((m) => m.id === selectedModels[0]);
 		if (model) {
+			const canUseImageGeneration =
+				$config?.features?.enable_image_generation &&
+				($user?.role === 'admin' || $user?.permissions?.features?.image_generation) &&
+				(model?.info?.meta?.capabilities?.['image_generation'] ?? true);
+
 			// Set Default Tools
 			if (model?.info?.meta?.toolIds) {
 				selectedToolIds = [
@@ -342,12 +348,12 @@
 			}
 
 			// Set Default Features
+			if (canUseImageGeneration && isImageGenerationOnlyModel(model)) {
+				imageGenerationEnabled = true;
+			}
+
 			if (model?.info?.meta?.defaultFeatureIds) {
-				if (
-					model.info?.meta?.capabilities?.['image_generation'] &&
-					$config?.features?.enable_image_generation &&
-					($user?.role === 'admin' || $user?.permissions?.features?.image_generation)
-				) {
+				if (canUseImageGeneration) {
 					imageGenerationEnabled = model.info.meta.defaultFeatureIds.includes('image_generation');
 				}
 
