@@ -1,6 +1,7 @@
 x.py
 yarn.lock
 .DS_Store
+.worktrees/
 node_modules
 /build
 /.svelte-kit
