@@ -1,6 +1,4 @@
 from typing import Optional
-import io
-import base64
 import json
 import asyncio
 import logging
@@ -28,9 +26,8 @@ from fastapi import (
     HTTPException,
     Request,
     status,
-    Response,
 )
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse
 
 
 from open_webui.utils.auth import get_admin_user, get_verified_user
@@ -46,11 +43,11 @@ router = APIRouter()
 
 def _resolve_default_model_image_path() -> Optional[str]:
     candidates = [
+        Path(__file__).resolve().parents[3] / "static" / "logo.png",
+        Path(__file__).resolve().parents[3] / "static" / "logo.jpg",
         Path(STATIC_DIR) / "logo.png",
         Path(STATIC_DIR) / "logo.jpg",
         Path(STATIC_DIR) / "favicon.png",
-        Path(__file__).resolve().parents[3] / "static" / "logo.png",
-        Path(__file__).resolve().parents[3] / "static" / "logo.jpg",
     ]
 
     for candidate in candidates:
@@ -403,51 +400,14 @@ async def get_model_by_id(
 
 @router.get("/model/profile/image")
 def get_model_profile_image(id: str, user=Depends(get_verified_user)):
-    model = Models.get_model_by_id(id)
-
-    if model:
-        etag = f'"{model.updated_at}"' if model.updated_at else None
-
-        if model.meta.profile_image_url:
-            if model.meta.profile_image_url.startswith("http"):
-                return Response(
-                    status_code=status.HTTP_302_FOUND,
-                    headers={"Location": model.meta.profile_image_url},
-                )
-            elif model.meta.profile_image_url.startswith("data:image"):
-                try:
-                    header, base64_data = model.meta.profile_image_url.split(",", 1)
-                    image_data = base64.b64decode(base64_data)
-                    image_buffer = io.BytesIO(image_data)
-                    media_type = header.split(";")[0].lstrip("data:")
-
-                    headers = {"Content-Disposition": "inline"}
-                    if etag:
-                        headers["ETag"] = etag
-
-                    return StreamingResponse(
-                        image_buffer,
-                        media_type=media_type,
-                        headers=headers,
-                    )
-                except Exception as e:
-                    pass
-
-        fallback_path = _resolve_default_model_image_path()
-        if fallback_path:
-            return FileResponse(fallback_path)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.NOT_FOUND,
-        )
-    else:
-        fallback_path = _resolve_default_model_image_path()
-        if fallback_path:
-            return FileResponse(fallback_path)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.NOT_FOUND,
-        )
+    # Always use project brand logo for model avatars.
+    fallback_path = _resolve_default_model_image_path()
+    if fallback_path:
+        return FileResponse(fallback_path)
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=ERROR_MESSAGES.NOT_FOUND,
+    )
 
 
 ############################

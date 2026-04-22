@@ -12,6 +12,10 @@
 		renderMermaidDiagram,
 		renderVegaVisualization
 	} from '$lib/utils';
+	import {
+		formatCodeExecutionResult,
+		shouldShowCodeExecutionOutput
+	} from '$lib/utils/codeExecutionDisplay';
 
 	import 'highlight.js/styles/github-dark.min.css';
 
@@ -70,6 +74,10 @@
 	let stderr = null;
 	let result = null;
 	let files = null;
+	let formattedResult = '';
+	let showExecutionOutput = false;
+	let hasFiles = false;
+	let fileItems: Array<{ type?: string; data?: string }> = [];
 
 	let copied = false;
 	let saved = false;
@@ -379,6 +387,22 @@
 		onAttributesUpdate();
 	}
 
+	$: showExecutionOutput = shouldShowCodeExecutionOutput({
+		collapsed,
+		attributes,
+		executing,
+		stdout,
+		stderr,
+		result,
+		files
+	});
+
+	$: formattedResult = formatCodeExecutionResult(result);
+
+	$: fileItems = Array.isArray(files) ? files : [];
+
+	$: hasFiles = fileItems.length > 0;
+
 	const onAttributesUpdate = () => {
 		if (attributes?.output) {
 			// Create a helper function to unescape HTML entities
@@ -399,6 +423,7 @@
 				stdout = output.stdout;
 				stderr = output.stderr;
 				result = output.result;
+				files = output.files;
 			} catch (error) {
 				console.error('Error:', error);
 			}
@@ -521,7 +546,7 @@
 			<div
 				class="language-{lang} rounded-t-2xl -mt-8 {editorClassName
 					? editorClassName
-					: executing || stdout || stderr || result
+					: showExecutionOutput
 						? ''
 						: 'rounded-b-2xl'} overflow-hidden"
 			>
@@ -543,10 +568,7 @@
 					{:else}
 						<pre
 							class=" hljs p-4 px-5 overflow-x-auto"
-							style="border-top-left-radius: 0px; border-top-right-radius: 0px; {(executing ||
-								stdout ||
-								stderr ||
-								result) &&
+							style="border-top-left-radius: 0px; border-top-right-radius: 0px; {showExecutionOutput &&
 								'border-bottom-left-radius: 0px; border-bottom-right-radius: 0px;'}"><code
 								class="language-{lang} rounded-t-none whitespace-pre text-sm"
 								>{@html hljs.highlightAuto(code, hljs.getLanguage(lang)?.aliases).value ||
@@ -555,7 +577,9 @@
 					{/if}
 				{:else}
 					<div
-						class="bg-white dark:bg-black dark:text-white rounded-b-2xl! pt-0.5 pb-2 px-4 flex flex-col gap-2 text-xs"
+						class="bg-white dark:bg-black dark:text-white pt-0.5 pb-2 px-4 flex flex-col gap-2 text-xs {showExecutionOutput
+							? ''
+							: 'rounded-b-2xl!'}"
 					>
 						<span class="text-gray-500 italic">
 							{$i18n.t('{{COUNT}} hidden lines', {
@@ -570,50 +594,50 @@
 				<div
 					id="plt-canvas-{id}"
 					class="bg-gray-50 dark:bg-black dark:text-white max-w-full overflow-x-auto scrollbar-hidden"
-				/>
+				></div>
+			{/if}
 
-				{#if executing || stdout || stderr || result || files}
-					<div
-						class="bg-gray-50 dark:bg-black dark:text-white rounded-b-2xl! py-4 px-4 flex flex-col gap-2"
-					>
-						{#if executing}
+			{#if showExecutionOutput}
+				<div
+					class="bg-gray-50 dark:bg-black dark:text-white rounded-b-2xl! py-4 px-4 flex flex-col gap-2"
+				>
+					{#if executing}
+						<div class=" ">
+							<div class=" text-gray-500 text-sm mb-1">{$i18n.t('STDOUT/STDERR')}</div>
+							<div class="text-sm">{$i18n.t('Running...')}</div>
+						</div>
+					{:else}
+						{#if stdout || stderr}
 							<div class=" ">
 								<div class=" text-gray-500 text-sm mb-1">{$i18n.t('STDOUT/STDERR')}</div>
-								<div class="text-sm">{$i18n.t('Running...')}</div>
+								<div
+									class="text-sm font-mono whitespace-pre-wrap {stdout?.split('\n')?.length > 100
+										? `max-h-96`
+										: ''} overflow-y-auto"
+								>
+									{stdout || stderr}
+								</div>
 							</div>
-						{:else}
-							{#if stdout || stderr}
-								<div class=" ">
-									<div class=" text-gray-500 text-sm mb-1">{$i18n.t('STDOUT/STDERR')}</div>
-									<div
-										class="text-sm font-mono whitespace-pre-wrap {stdout?.split('\n')?.length > 100
-											? `max-h-96`
-											: ''}  overflow-y-auto"
-									>
-										{stdout || stderr}
-									</div>
-								</div>
-							{/if}
-							{#if result || files}
-								<div class=" ">
-									<div class=" text-gray-500 text-sm mb-1">{$i18n.t('RESULT')}</div>
-									{#if result}
-										<div class="text-sm">{`${JSON.stringify(result)}`}</div>
-									{/if}
-									{#if files}
-										<div class="flex flex-col gap-2">
-											{#each files as file}
-												{#if file.type.startsWith('image')}
-													<img src={file.data} alt="Output" class=" w-full max-w-[36rem]" />
-												{/if}
-											{/each}
-										</div>
-									{/if}
-								</div>
-							{/if}
 						{/if}
-					</div>
-				{/if}
+						{#if formattedResult || hasFiles}
+							<div class=" ">
+								<div class=" text-gray-500 text-sm mb-1">{$i18n.t('RESULT')}</div>
+								{#if formattedResult}
+									<div class="text-sm whitespace-pre-wrap">{formattedResult}</div>
+								{/if}
+								{#if hasFiles}
+									<div class="flex flex-col gap-2">
+										{#each fileItems as file}
+											{#if file.type.startsWith('image')}
+												<img src={file.data} alt="Output" class=" w-full max-w-[36rem]" />
+											{/if}
+										{/each}
+									</div>
+								{/if}
+							</div>
+						{/if}
+					{/if}
+				</div>
 			{/if}
 		{/if}
 	</div>

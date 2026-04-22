@@ -56,6 +56,8 @@
 	import { generateAutoCompletion } from '$lib/apis';
 	import { deleteFileById } from '$lib/apis/files';
 	import { getSessionUser } from '$lib/apis/auths';
+	import { getKnowledgeBases } from '$lib/apis/knowledge';
+	import { getNoteList } from '$lib/apis/notes';
 	import { getTools } from '$lib/apis/tools';
 
 	import { WEBUI_BASE_URL, WEBUI_API_BASE_URL, PASTED_TEXT_CHARACTER_LIMIT } from '$lib/constants';
@@ -91,15 +93,25 @@
 
 	import { DropdownMenu } from 'bits-ui';
 	import { flyAndScale } from '$lib/utils/transitions';
+	import {
+		clearReferenceAttachments,
+		countReferenceAttachments,
+		getVisibleComposerFiles,
+		replaceReferenceAttachments,
+		toggleReferenceAttachment
+	} from '$lib/utils/referenceAttachments';
 
 	import CommandSuggestionList from './MessageInput/CommandSuggestionList.svelte';
 	import Knobs from '../icons/Knobs.svelte';
 	import ValvesModal from '../workspace/common/ValvesModal.svelte';
 	import PageEdit from '../icons/PageEdit.svelte';
+	import Database from '../icons/Database.svelte';
 	import { goto } from '$app/navigation';
 	import InputModal from '../common/InputModal.svelte';
 	import Expand from '../icons/Expand.svelte';
 	import QueuedMessageItem from './MessageInput/QueuedMessageItem.svelte';
+	import KnowledgePicker from './MessageInput/InputMenu/Knowledge.svelte';
+	import NotesPicker from './MessageInput/InputMenu/Notes.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -133,6 +145,20 @@
 	export let codeInterpreterEnabled = false;
 
 	let showTerminalMenu = false;
+	let showKnowledgePicker = false;
+	let showNotesPicker = false;
+	let referenceKnowledgeEnabled = false;
+	let referenceNotesEnabled = false;
+	let referenceToggleGuard = new Map<string, number>();
+	let knowledgeReferenceLoading = false;
+	let notesReferenceLoading = false;
+	let visibleComposerFiles = [];
+	let knowledgeReferencePreviewCount = 0;
+	let notesReferencePreviewCount = 0;
+	let knowledgeReferenceSelectionToken = 0;
+	let notesReferenceSelectionToken = 0;
+	let selectedKnowledgeReferences = [];
+	let selectedNoteReferences = [];
 
 	export let messageQueue: { id: string; prompt: string; files: any[] }[] = [];
 	export let onQueueSendNow: (id: string) => void = () => {};
@@ -172,6 +198,25 @@
 		webSearchEnabled,
 		codeInterpreterEnabled
 	});
+
+	$: visibleComposerFiles = getVisibleComposerFiles(files);
+	$: selectedKnowledgeReferences = files.filter((item) => item?.referenceSource === 'knowledge');
+	$: selectedNoteReferences = files.filter((item) => item?.referenceSource === 'note');
+	$: referenceKnowledgeEnabled = knowledgeReferenceCount() > 0;
+	$: referenceNotesEnabled = notesReferenceCount() > 0;
+	$: if (referenceKnowledgeEnabled) {
+		knowledgeReferencePreviewCount = 0;
+	}
+	$: if (referenceNotesEnabled) {
+		notesReferencePreviewCount = 0;
+	}
+
+	$: knowledgeReferenceButtonCount =
+		knowledgeReferenceCount() > 0 ? knowledgeReferenceCount() : knowledgeReferencePreviewCount;
+	$: notesReferenceButtonCount =
+		notesReferenceCount() > 0 ? notesReferenceCount() : notesReferencePreviewCount;
+	$: knowledgeReferenceActive = knowledgeReferenceLoading || knowledgeReferenceButtonCount > 0;
+	$: notesReferenceActive = notesReferenceLoading || notesReferenceButtonCount > 0;
 
 	const inputVariableHandler = async (text: string): Promise<string> => {
 		inputVariables = extractInputVariables(text);
@@ -447,6 +492,169 @@
 
 	let showInputModal = false;
 
+	const knowledgeReferenceCount = () => countReferenceAttachments(files, 'knowledge');
+	const notesReferenceCount = () => countReferenceAttachments(files, 'note');
+
+	const toggleReferenceFile = (item, source: 'knowledge' | 'note') => {
+		files = toggleReferenceAttachment(files, item, source);
+	};
+
+	const safeToggleReferenceFile = (item, source: 'knowledge' | 'note') => {
+		const guardKey = `${source}:${item?.type ?? ''}:${item?.id ?? ''}`;
+		const now = Date.now();
+		const last = referenceToggleGuard.get(guardKey) ?? 0;
+
+		// Prevent duplicate click events from toggling add -> remove instantly.
+		if (now - last < 250) {
+			return;
+		}
+		referenceToggleGuard.set(guardKey, now);
+		toggleReferenceFile(item, source);
+	};
+
+	const clearReferenceSource = (source: 'knowledge' | 'note') => {
+		if (source === 'knowledge') {
+			knowledgeReferenceSelectionToken += 1;
+			knowledgeReferencePreviewCount = 0;
+			knowledgeReferenceLoading = false;
+		} else {
+			notesReferenceSelectionToken += 1;
+			notesReferencePreviewCount = 0;
+			notesReferenceLoading = false;
+		}
+
+		files = clearReferenceAttachments(files, source);
+
+		if (source === 'knowledge') {
+			showKnowledgePicker = false;
+		} else {
+			showNotesPicker = false;
+		}
+	};
+
+	const replaceReferenceSource = (items, source: 'knowledge' | 'note') => {
+		files = replaceReferenceAttachments(files, items, source);
+	};
+
+	const getAllKnowledgeReferenceItems = async () => {
+		const items = [];
+		let page = 1;
+
+		while (true) {
+			const res = await getKnowledgeBases(localStorage.token, page).catch((error) => {
+				console.error('Failed to load knowledge bases', error);
+				toast.error('加载知识库失败');
+				return null;
+			});
+
+			const pageItems = res?.items ?? [];
+			if (pageItems.length === 0) {
+				break;
+			}
+
+			items.push(
+				...pageItems.map((item) => ({
+					type: 'collection',
+					...item
+				}))
+			);
+
+			if (res?.total && items.length >= res.total) {
+				break;
+			}
+
+			page += 1;
+		}
+
+		return items;
+	};
+
+	const getAllNotesReferenceItems = async () => {
+		const items = [];
+		let page = 1;
+
+		while (true) {
+			const res = await getNoteList(localStorage.token, page).catch((error) => {
+				console.error('Failed to load notes', error);
+				toast.error('加载笔记失败');
+				return null;
+			});
+
+			const pageItems = res ?? [];
+			if (pageItems.length === 0) {
+				break;
+			}
+
+			items.push(
+				...pageItems.map((note) => ({
+					...note,
+					type: 'note',
+					name: note.title,
+					description: dayjs(note.updated_at / 1000000).fromNow()
+				}))
+			);
+
+			page += 1;
+		}
+
+		return items;
+	};
+
+	let knowledgeReferenceButtonCount = 0;
+	let notesReferenceButtonCount = 0;
+	let knowledgeReferenceActive = false;
+	let notesReferenceActive = false;
+
+	const selectAllKnowledgeReferences = async (preview = { items: [], total: null }) => {
+		const requestToken = ++knowledgeReferenceSelectionToken;
+		knowledgeReferenceLoading = true;
+		knowledgeReferencePreviewCount = preview?.total ?? preview?.items?.length ?? 0;
+
+		try {
+			if ((preview?.items ?? []).length > 0) {
+				replaceReferenceSource(preview.items, 'knowledge');
+			}
+
+			const items = await getAllKnowledgeReferenceItems();
+			if (requestToken !== knowledgeReferenceSelectionToken) {
+				return;
+			}
+
+			replaceReferenceSource(items, 'knowledge');
+		} finally {
+			if (requestToken === knowledgeReferenceSelectionToken) {
+				knowledgeReferenceLoading = false;
+			}
+		}
+	};
+
+	const selectAllNoteReferences = async (preview = { items: [] }) => {
+		const requestToken = ++notesReferenceSelectionToken;
+		notesReferenceLoading = true;
+		notesReferencePreviewCount = preview?.items?.length ?? 0;
+
+		try {
+			if ((preview?.items ?? []).length > 0) {
+				replaceReferenceSource(preview.items, 'note');
+			}
+
+			const items = await getAllNotesReferenceItems();
+			if (requestToken !== notesReferenceSelectionToken) {
+				return;
+			}
+
+			replaceReferenceSource(items, 'note');
+		} finally {
+			if (requestToken === notesReferenceSelectionToken) {
+				notesReferenceLoading = false;
+			}
+		}
+	};
+
+	const removeComposerFile = (targetFile) => {
+		files = files.filter((file) => file !== targetFile);
+	};
+
 	export let dragged = false;
 	let shiftKey = false;
 
@@ -525,44 +733,6 @@
 			top: element.scrollHeight,
 			behavior: 'smooth'
 		});
-	};
-
-	const screenCaptureHandler = async () => {
-		try {
-			// Request screen media
-			const mediaStream = await navigator.mediaDevices.getDisplayMedia({
-				video: { cursor: 'never' },
-				audio: false
-			});
-			// Once the user selects a screen, temporarily create a video element
-			const video = document.createElement('video');
-			video.srcObject = mediaStream;
-			// Ensure the video loads without affecting user experience or tab switching
-			await video.play();
-			// Set up the canvas to match the video dimensions
-			const canvas = document.createElement('canvas');
-			canvas.width = video.videoWidth;
-			canvas.height = video.videoHeight;
-			// Grab a single frame from the video stream using the canvas
-			const context = canvas.getContext('2d');
-			context.drawImage(video, 0, 0, canvas.width, canvas.height);
-			// Stop all video tracks (stop screen sharing) after capturing the image
-			mediaStream.getTracks().forEach((track) => track.stop());
-
-			// bring back focus to this current tab, so that the user can see the screen capture
-			window.focus();
-
-			// Convert the canvas to a Base64 image URL
-			const imageUrl = canvas.toDataURL('image/png');
-			const blob = await (await fetch(imageUrl)).blob();
-			const file = new File([blob], `screen-capture-${Date.now()}.png`, { type: 'image/png' });
-			inputFilesHandler([file]);
-			// Clean memory: Clear video srcObject
-			video.srcObject = null;
-		} catch (error) {
-			// Handle any errors (e.g., user cancels screen sharing)
-			console.error('Error capturing screen:', error);
-		}
 	};
 
 	const uploadFileHandler = async (file, process = true, itemData = {}) => {
@@ -1198,9 +1368,9 @@
 
 						<div
 							id="message-input-container"
-							class="flex-1 flex flex-col relative w-full shadow-lg rounded-3xl border {$temporaryChatEnabled
+							class="flex-1 flex flex-col justify-between relative w-full shadow-lg rounded-3xl border {$temporaryChatEnabled
 								? 'border-dashed border-gray-100 dark:border-gray-800 hover:border-gray-200 focus-within:border-gray-200 hover:dark:border-gray-700 focus-within:dark:border-gray-700'
-								: ' border-gray-100/30 dark:border-gray-850/30 hover:border-gray-200 focus-within:border-gray-100 hover:dark:border-gray-800 focus-within:dark:border-gray-800'}  transition px-1 bg-white/5 dark:bg-gray-500/5 backdrop-blur-sm dark:text-gray-100"
+								: ' border-gray-100/30 dark:border-gray-850/30 hover:border-gray-200 focus-within:border-gray-100 hover:dark:border-gray-800 focus-within:dark:border-gray-800'}  transition px-1.5 py-1.5 min-h-[9.5rem] bg-white/5 dark:bg-gray-500/5 backdrop-blur-sm dark:text-gray-100"
 							dir={$settings?.chatDirection ?? 'auto'}
 						>
 							{#if atSelectedModel !== undefined}
@@ -1230,12 +1400,12 @@
 								</div>
 							{/if}
 
-							{#if files.length > 0}
+							{#if visibleComposerFiles.length > 0}
 								<div
 									class="mx-2 mt-2.5 pb-1.5 flex items-center flex-wrap gap-2"
 									dir={$settings?.chatDirection ?? 'auto'}
 								>
-									{#each files as file, fileIdx}
+									{#each visibleComposerFiles as file}
 										{#if file.type === 'image' || (file?.content_type ?? '').startsWith('image/')}
 											{@const fileUrl =
 												file.url.startsWith('data') || file.url.startsWith('http')
@@ -1282,8 +1452,7 @@
 														type="button"
 														aria-label={$i18n.t('Remove file')}
 														on:click={() => {
-															files.splice(fileIdx, 1);
-															files = files;
+															removeComposerFile(file);
 														}}
 													>
 														<svg
@@ -1312,9 +1481,7 @@
 												small={true}
 												modal={['file', 'collection'].includes(file?.type)}
 												on:dismiss={async () => {
-													// Remove from UI state
-													files.splice(fileIdx, 1);
-													files = files;
+													removeComposerFile(file);
 												}}
 												on:click={() => {
 													console.log(file);
@@ -1325,13 +1492,13 @@
 								</div>
 							{/if}
 
-							<div class="px-2.5">
+							<div class="px-2.5 flex-1">
 								<div
-									class="scrollbar-hidden rtl:text-right ltr:text-left bg-transparent dark:text-gray-100 outline-hidden w-full pb-1 px-1 resize-none h-fit max-h-96 overflow-auto {files.length ===
+									class="scrollbar-hidden rtl:text-right ltr:text-left bg-transparent dark:text-gray-100 outline-hidden w-full pb-1 px-1 resize-none h-fit max-h-96 overflow-auto {visibleComposerFiles.length ===
 									0
 										? atSelectedModel !== undefined
-											? 'pt-1.5'
-											: 'pt-2.5'
+											? 'pt-3'
+											: 'pt-4'
 										: ''}"
 									id="chat-input-container"
 								>
@@ -1527,7 +1694,6 @@
 										bind:files
 										selectedModels={atSelectedModel ? [atSelectedModel.id] : selectedModels}
 										{fileUploadCapableModels}
-										{screenCaptureHandler}
 										{inputFilesHandler}
 										uploadFilesHandler={() => {
 											filesInputElement.click();
@@ -1764,6 +1930,130 @@
 												</button>
 											</Tooltip>
 										{/if}
+
+										<Dropdown bind:show={showKnowledgePicker}>
+											<div
+												class="flex items-center rounded-full transition-colors duration-300 max-w-full overflow-hidden {knowledgeReferenceActive
+													? 'text-sky-500 dark:text-sky-300 bg-sky-50 dark:bg-sky-400/10 border border-sky-200/40 dark:border-sky-500/20'
+													: 'bg-transparent text-gray-600 dark:text-gray-300'}"
+											>
+												<button
+													type="button"
+													class="p-[7px] flex gap-1.5 items-center text-sm focus:outline-hidden hover:bg-gray-50/80 dark:hover:bg-gray-800/60 rounded-full"
+													on:click|preventDefault|stopPropagation={() => {
+														showKnowledgePicker = !showKnowledgePicker;
+													}}
+												>
+													{#if knowledgeReferenceLoading}
+														<Spinner className="size-4" />
+													{:else}
+														<Database className="size-4" strokeWidth="1.75" />
+													{/if}
+													<span class:font-medium={knowledgeReferenceActive}
+														>{$i18n.t('知识库')}</span
+													>
+													{#if knowledgeReferenceButtonCount > 0}
+														<span
+															class="min-w-5 h-5 px-1.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-300 text-xs flex items-center justify-center"
+														>
+															{knowledgeReferenceButtonCount}
+														</span>
+													{/if}
+												</button>
+												{#if knowledgeReferenceButtonCount > 0}
+													<button
+														type="button"
+														class="p-[7px] pr-2 text-sky-500 dark:text-sky-300 hover:text-sky-700 dark:hover:text-sky-200"
+														aria-label="取消知识库引用"
+														on:click|preventDefault|stopPropagation={() => {
+															clearReferenceSource('knowledge');
+														}}
+													>
+														<XMark className="size-4" strokeWidth="1.75" />
+													</button>
+												{/if}
+											</div>
+											<div slot="content">
+												<DropdownMenu.Content
+													class="w-80 max-h-72 overflow-y-auto rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-850 p-1 shadow-lg z-50"
+													sideOffset={8}
+													side="top"
+													align="end"
+													transition={flyAndScale}
+												>
+													<KnowledgePicker
+														selectedReferences={selectedKnowledgeReferences}
+														onSelectAll={async (context) => {
+															await selectAllKnowledgeReferences(context);
+														}}
+														onSelect={(item) => {
+															safeToggleReferenceFile(item, 'knowledge');
+														}}
+													/>
+												</DropdownMenu.Content>
+											</div>
+										</Dropdown>
+
+										<Dropdown bind:show={showNotesPicker}>
+											<div
+												class="flex items-center rounded-full transition-colors duration-300 max-w-full overflow-hidden {notesReferenceActive
+													? 'text-sky-500 dark:text-sky-300 bg-sky-50 dark:bg-sky-400/10 border border-sky-200/40 dark:border-sky-500/20'
+													: 'bg-transparent text-gray-600 dark:text-gray-300'}"
+											>
+												<button
+													type="button"
+													class="p-[7px] flex gap-1.5 items-center text-sm focus:outline-hidden hover:bg-gray-50/80 dark:hover:bg-gray-800/60 rounded-full"
+													on:click|preventDefault|stopPropagation={() => {
+														showNotesPicker = !showNotesPicker;
+													}}
+												>
+													{#if notesReferenceLoading}
+														<Spinner className="size-4" />
+													{:else}
+														<PageEdit className="size-4 translate-y-[0.5px]" />
+													{/if}
+													<span class:font-medium={notesReferenceActive}>{$i18n.t('笔记')}</span>
+													{#if notesReferenceButtonCount > 0}
+														<span
+															class="min-w-5 h-5 px-1.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-300 text-xs flex items-center justify-center"
+														>
+															{notesReferenceButtonCount}
+														</span>
+													{/if}
+												</button>
+												{#if notesReferenceButtonCount > 0}
+													<button
+														type="button"
+														class="p-[7px] pr-2 text-sky-500 dark:text-sky-300 hover:text-sky-700 dark:hover:text-sky-200"
+														aria-label="取消笔记引用"
+														on:click|preventDefault|stopPropagation={() => {
+															clearReferenceSource('note');
+														}}
+													>
+														<XMark className="size-4" strokeWidth="1.75" />
+													</button>
+												{/if}
+											</div>
+											<div slot="content">
+												<DropdownMenu.Content
+													class="w-80 max-h-72 overflow-y-auto rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-850 p-1 shadow-lg z-50"
+													sideOffset={8}
+													side="top"
+													align="end"
+													transition={flyAndScale}
+												>
+													<NotesPicker
+														selectedReferences={selectedNoteReferences}
+														onSelectAll={async (context) => {
+															await selectAllNoteReferences(context);
+														}}
+														onSelect={(item) => {
+															safeToggleReferenceFile(item, 'note');
+														}}
+													/>
+												</DropdownMenu.Content>
+											</div>
+										</Dropdown>
 									</div>
 								</div>
 

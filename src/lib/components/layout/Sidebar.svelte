@@ -241,13 +241,18 @@
 	};
 
 	const loadMoreChats = async () => {
+		if (chatListLoading || allChatsLoaded) {
+			return;
+		}
+
 		chatListLoading = true;
 
-		currentChatPage.set($currentChatPage + 1);
+		const nextPage = $currentChatPage + 1;
+		currentChatPage.set(nextPage);
 
 		let newChatList = [];
 
-		newChatList = await getChatList(localStorage.token, $currentChatPage);
+		newChatList = await getChatList(localStorage.token, nextPage);
 
 		// once the bottom of the list has been reached (no results) there is no need to continue querying
 		allChatsLoaded = newChatList.length === 0;

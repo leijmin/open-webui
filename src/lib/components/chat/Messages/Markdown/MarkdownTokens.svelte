@@ -8,6 +8,10 @@
 
 	import { marked, type Token } from 'marked';
 	import { copyToClipboard, unescapeHtml } from '$lib/utils';
+	import {
+		shouldAutoExpandCodeInterpreterDetails,
+		shouldCollapseCodeBlockByDefault
+	} from '$lib/utils/codeExecutionDisplay';
 
 	import { WEBUI_BASE_URL } from '$lib/constants';
 	import { settings } from '$lib/stores';
@@ -108,7 +112,10 @@
 		{#if token.raw.includes('```')}
 			<CodeBlock
 				id={`${id}-${tokenIdx}`}
-				collapsed={$settings?.collapseCodeBlocks ?? false}
+				collapsed={shouldCollapseCodeBlockByDefault(
+					$settings?.collapseCodeBlocks ?? false,
+					attributes
+				)}
 				{token}
 				lang={token?.lang ?? ''}
 				code={token?.text ?? ''}
@@ -335,7 +342,10 @@
 		{:else if textContent.length > 0}
 			<Collapsible
 				title={token.summary}
-				open={$settings?.expandDetails ?? false}
+				open={shouldAutoExpandCodeInterpreterDetails(
+					$settings?.expandDetails ?? false,
+					token?.attributes
+				)}
 				attributes={token?.attributes}
 				className="w-full space-y-1"
 				dir="auto"
