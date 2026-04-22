@@ -3,7 +3,7 @@
 # Known static asset paths used as default profile images
 _ALLOWED_STATIC_PATHS = (
     "/user.png",
-    "/static/favicon.png",
+    "/static/logo.jpg",
 )
 
 
@@ -14,7 +14,7 @@ def validate_profile_image_url(url: str) -> str:
     Allowed formats:
     - Empty string (falls back to default avatar)
     - data:image/* URIs (base64-encoded uploads from the frontend)
-    - Known static asset paths (/user.png, /static/favicon.png)
+    - Known static asset paths (/user.png, /static/logo.jpg)
 
     Returns the url unchanged if valid, raises ValueError otherwise.
     """

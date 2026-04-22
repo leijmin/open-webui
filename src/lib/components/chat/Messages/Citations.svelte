@@ -23,6 +23,13 @@
 
 	let selectedCitation: any = null;
 
+	const setBrandFaviconFallback = (event: Event) => {
+		const target = event.currentTarget as HTMLImageElement;
+		target.src = '/static/logo.jpg';
+		target.className =
+			'size-4 rounded-md shrink-0 border border-white dark:border-gray-850 bg-white p-0.5 object-contain';
+	};
+
 	export const showSourceModal = (sourceId) => {
 		let index;
 		let suffix = null;
@@ -178,9 +185,7 @@
 							src="https://www.google.com/s2/favicons?sz=32&domain={citation.source.name}"
 							alt="favicon"
 							class="size-4 rounded-full shrink-0 border border-white dark:border-gray-850 bg-white dark:bg-gray-900"
-							on:error={(e) => {
-								e.target.src = '/favicon.png';
-							}}
+							on:error={setBrandFaviconFallback}
 						/>
 					{/each}
 				</div>

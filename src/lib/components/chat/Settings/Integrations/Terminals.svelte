@@ -76,14 +76,7 @@
 	{#if servers.length === 0}
 		<div class="text-xs text-gray-400 dark:text-gray-500">
 			{$i18n.t('No terminal connections configured.')}
-			<a
-				href="https://github.com/open-webui/open-terminal"
-				target="_blank"
-				rel="noopener noreferrer"
-				class="underline hover:text-gray-700 dark:hover:text-gray-200"
-			>
-				{$i18n.t('Learn more')} ↗
-			</a>
+			<span class="ml-1">如需开通请联系管理员。</span>
 		</div>
 	{/if}
 </div>

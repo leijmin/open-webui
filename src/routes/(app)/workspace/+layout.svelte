@@ -46,7 +46,7 @@
 
 <svelte:head>
 	<title>
-		{$i18n.t('Workspace')} • {$WEBUI_NAME}
+		{$i18n.t('资料中心')} • {$WEBUI_NAME}
 	</title>
 </svelte:head>
 
@@ -147,7 +147,7 @@
 					</div>
 				</div>
 
-				<!-- <div class="flex items-center text-xl font-medium">{$i18n.t('Workspace')}</div> -->
+				<!-- <div class="flex items-center text-xl font-medium">{$i18n.t('资料中心')}</div> -->
 			</div>
 		</nav>
 

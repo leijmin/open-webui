@@ -22,25 +22,15 @@
 			<div class="m-auto pb-44 flex flex-col justify-center">
 				<div class="max-w-md">
 					<div class="text-center text-2xl font-medium z-50">
-						{$i18n.t('{{webUIName}} Backend Required', { webUIName: $WEBUI_NAME })}
+						{$i18n.t('站点服务暂时不可用')}
 					</div>
 
 					<div class=" mt-4 text-center text-sm w-full">
-						{$i18n.t(
-							"Oops! You're using an unsupported method (frontend only). Please serve the WebUI from the backend."
-						)}
+						{$i18n.t('当前页面暂时无法连接到胡椒文旅后台服务。')}
 
 						<br class=" " />
 						<br class=" " />
-						<a
-							class=" font-medium underline"
-							href="https://github.com/open-webui/open-webui#how-to-install-"
-							target="_blank">{$i18n.t('See readme.md for instructions')}</a
-						>
-						{$i18n.t('or')}
-						<a class=" font-medium underline" href="https://discord.gg/5rJgQTnV4s" target="_blank"
-							>{$i18n.t('join our Discord for help.')}</a
-						>
+						{$i18n.t('请先刷新页面；如仍无法访问，请联系系统管理员检查服务状态。')}
 					</div>
 
 					<div class=" mt-6 mx-auto relative group w-fit">
@@ -50,7 +40,7 @@
 								location.href = '/';
 							}}
 						>
-							{$i18n.t('Check Again')}
+							{$i18n.t('重新检查')}
 						</button>
 					</div>
 				</div>

@@ -1889,8 +1889,8 @@ def get_webhook_profile_image(webhook_id: str, user=Depends(get_verified_user)):
     """Get webhook profile image by webhook ID."""
     webhook = Channels.get_webhook_by_id(webhook_id)
     if not webhook:
-        # Return default favicon if webhook not found
-        return FileResponse(f"{STATIC_DIR}/favicon.png")
+        # Return default brand logo if webhook not found
+        return FileResponse(f"{STATIC_DIR}/logo.jpg")
 
     if webhook.profile_image_url:
         # Check if it's url or base64
@@ -1914,8 +1914,8 @@ def get_webhook_profile_image(webhook_id: str, user=Depends(get_verified_user)):
             except Exception as e:
                 pass
 
-    # Return default favicon if no profile image
-    return FileResponse(f"{STATIC_DIR}/favicon.png")
+    # Return default brand logo if no profile image
+    return FileResponse(f"{STATIC_DIR}/logo.jpg")
 
 
 @router.get("/{id}/webhooks", response_model=list[ChannelWebhookModel])

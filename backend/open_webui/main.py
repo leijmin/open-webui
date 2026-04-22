@@ -708,7 +708,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Open WebUI",
+    title="胡椒文旅",
     docs_url="/docs" if ENV == "dev" else None,
     openapi_url="/openapi.json" if ENV == "dev" else None,
     redoc_url=None,
@@ -2554,21 +2554,21 @@ async def get_manifest_json():
         return {
             "name": app.state.WEBUI_NAME,
             "short_name": app.state.WEBUI_NAME,
-            "description": f"{app.state.WEBUI_NAME} is an open, extensible, user-friendly interface for AI that adapts to your workflow.",
+            "description": "胡椒文旅内部智能助手",
             "start_url": "/",
             "display": "standalone",
-            "background_color": "#343541",
+            "background_color": "#4da98a",
             "icons": [
                 {
-                    "src": "/static/logo.png",
-                    "type": "image/png",
-                    "sizes": "500x500",
+                    "src": "/static/logo.jpg",
+                    "type": "image/jpeg",
+                    "sizes": "640x640",
                     "purpose": "any",
                 },
                 {
-                    "src": "/static/logo.png",
-                    "type": "image/png",
-                    "sizes": "500x500",
+                    "src": "/static/logo.jpg",
+                    "type": "image/jpeg",
+                    "sizes": "640x640",
                     "purpose": "maskable",
                 },
             ],
@@ -2585,9 +2585,9 @@ async def get_opensearch_xml():
     xml_content = rf"""
     <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/" xmlns:moz="http://www.mozilla.org/2006/browser/search/">
     <ShortName>{app.state.WEBUI_NAME}</ShortName>
-    <Description>Search {app.state.WEBUI_NAME}</Description>
+    <Description>搜索胡椒文旅</Description>
     <InputEncoding>UTF-8</InputEncoding>
-    <Image width="16" height="16" type="image/x-icon">{app.state.config.WEBUI_URL}/static/favicon.png</Image>
+    <Image width="640" height="640" type="image/jpeg">{app.state.config.WEBUI_URL}/static/logo.jpg</Image>
     <Url type="text/html" method="get" template="{app.state.config.WEBUI_URL}/?q={"{searchTerms}"}"/>
     <moz:SearchForm>{app.state.config.WEBUI_URL}</moz:SearchForm>
     </OpenSearchDescription>
@@ -2629,7 +2629,7 @@ def swagger_ui_html(*args, **kwargs):
         **kwargs,
         swagger_js_url="/static/swagger-ui/swagger-ui-bundle.js",
         swagger_css_url="/static/swagger-ui/swagger-ui.css",
-        swagger_favicon_url="/static/swagger-ui/favicon.png",
+        swagger_favicon_url="/static/logo.jpg",
     )
 
 
