@@ -6,6 +6,7 @@
 	import { updateUserInfo } from '$lib/apis/users';
 	import { getUserPosition } from '$lib/utils';
 	import { setTextScale } from '$lib/utils/text-scale';
+	import { getWebSearchMode } from '$lib/utils/webSearchPreference';
 
 	import Minus from '$lib/components/icons/Minus.svelte';
 	import Plus from '$lib/components/icons/Plus.svelte';
@@ -270,7 +271,7 @@
 		}
 
 		backgroundImageUrl = $settings?.backgroundImageUrl ?? null;
-		webSearch = $settings?.webSearch ?? null;
+		webSearch = getWebSearchMode($settings);
 
 		textScale = $settings?.textScale ?? null;
 	});

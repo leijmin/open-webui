@@ -250,6 +250,11 @@
 
 		{#if $config?.features.enable_login_form}
 			<div class="mt-2">
+				<div class="rounded-2xl border border-gray-100 dark:border-gray-850/60 bg-gray-50/70 dark:bg-gray-900/40 px-4 py-3 mb-3">
+					<div class="text-xs font-medium text-gray-500">{$i18n.t('Login Account')}</div>
+					<div class="mt-1 text-sm font-medium break-all">{$user?.email ?? '-'}</div>
+				</div>
+
 				<UpdatePassword />
 			</div>
 		{/if}

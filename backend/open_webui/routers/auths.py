@@ -293,21 +293,23 @@ async def update_password(
     if WEBUI_AUTH_TRUSTED_EMAIL_HEADER:
         raise HTTPException(400, detail=ERROR_MESSAGES.ACTION_PROHIBITED)
     if session_user:
-        user = Auths.authenticate_user(
-            session_user.email,
-            lambda pw: verify_password(form_data.password, pw),
-            db=db,
-        )
+        if form_data.password:
+            user = Auths.authenticate_user(
+                session_user.email,
+                lambda pw: verify_password(form_data.password, pw),
+                db=db,
+            )
 
-        if user:
-            try:
-                validate_password(form_data.password)
-            except Exception as e:
-                raise HTTPException(400, detail=str(e))
-            hashed = get_password_hash(form_data.new_password)
-            return Auths.update_user_password_by_id(user.id, hashed, db=db)
-        else:
-            raise HTTPException(400, detail=ERROR_MESSAGES.INCORRECT_PASSWORD)
+            if not user:
+                raise HTTPException(400, detail=ERROR_MESSAGES.INCORRECT_PASSWORD)
+
+        try:
+            validate_password(form_data.new_password)
+        except Exception as e:
+            raise HTTPException(400, detail=str(e))
+
+        hashed = get_password_hash(form_data.new_password)
+        return Auths.update_user_password_by_id(session_user.id, hashed, db=db)
     else:
         raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_CRED)
 

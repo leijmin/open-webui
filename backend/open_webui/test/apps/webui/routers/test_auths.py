@@ -73,6 +73,33 @@ class TestAuths(AbstractPostgresTest):
         )
         assert new_auth is not None
 
+    def test_update_password_without_current_password(self):
+        from open_webui.utils.auth import get_password_hash
+
+        user = self.auths.insert_new_auth(
+            email="john.doe@openwebui.com",
+            password=get_password_hash("old_password"),
+            name="John Doe",
+            profile_image_url="/user.png",
+            role="user",
+        )
+
+        with mock_webui_user(id=user.id):
+            response = self.fast_api_client.post(
+                self.create_url("/update/password"),
+                json={"new_password": "new_password"},
+            )
+        assert response.status_code == 200
+
+        old_auth = self.auths.authenticate_user(
+            "john.doe@openwebui.com", "old_password"
+        )
+        assert old_auth is None
+        new_auth = self.auths.authenticate_user(
+            "john.doe@openwebui.com", "new_password"
+        )
+        assert new_auth is not None
+
     def test_signin(self):
         from open_webui.utils.auth import get_password_hash
 

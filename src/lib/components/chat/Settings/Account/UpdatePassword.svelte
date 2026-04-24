@@ -7,24 +7,20 @@
 	const i18n = getContext('i18n');
 
 	let show = false;
-	let currentPassword = '';
 	let newPassword = '';
 	let newPasswordConfirm = '';
 
 	const updatePasswordHandler = async () => {
 		if (newPassword === newPasswordConfirm) {
-			const res = await updateUserPassword(localStorage.token, currentPassword, newPassword).catch(
-				(error) => {
-					toast.error(`${error}`);
-					return null;
-				}
-			);
+			const res = await updateUserPassword(localStorage.token, newPassword).catch((error) => {
+				toast.error(`${error}`);
+				return null;
+			});
 
 			if (res) {
 				toast.success($i18n.t('Successfully updated.'));
 			}
 
-			currentPassword = '';
 			newPassword = '';
 			newPasswordConfirm = '';
 		} else {
@@ -56,18 +52,9 @@
 
 	{#if show}
 		<div class=" py-2.5 space-y-1.5">
-			<div class="flex flex-col w-full">
-				<div class=" mb-1 text-xs text-gray-500">{$i18n.t('Current Password')}</div>
-
-				<div class="flex-1">
-					<SensitiveInput
-						class="w-full bg-transparent text-sm dark:text-gray-300 outline-hidden placeholder:opacity-30"
-						type="password"
-						bind:value={currentPassword}
-						placeholder={$i18n.t('Enter your current password')}
-						autocomplete="current-password"
-						required
-					/>
+			<div class="rounded-2xl border border-gray-100 dark:border-gray-850/60 bg-gray-50/70 dark:bg-gray-900/40 px-3 py-2.5">
+				<div class="text-xs text-gray-500">
+					{$i18n.t('Password reset does not require your current password.')}
 				</div>
 			</div>
 

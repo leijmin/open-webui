@@ -22,6 +22,7 @@
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import Switch from '$lib/components/common/Switch.svelte';
 	import Spinner from '$lib/components/common/Spinner.svelte';
+	import { getWebSearchMode } from '$lib/utils/webSearchPreference';
 	import Wrench from '$lib/components/icons/Wrench.svelte';
 	import Sparkles from '$lib/components/icons/Sparkles.svelte';
 	import GlobeAlt from '$lib/components/icons/GlobeAlt.svelte';
@@ -234,7 +235,9 @@
 							<button
 								class="flex w-full justify-between gap-2 items-center px-3 py-1.5 text-sm cursor-pointer rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50"
 								on:click={() => {
-									webSearchEnabled = !webSearchEnabled;
+									if (getWebSearchMode($settings) !== 'always') {
+										webSearchEnabled = !webSearchEnabled;
+									}
 								}}
 							>
 								<div class="flex-1 truncate">
@@ -249,7 +252,7 @@
 
 								<div class=" shrink-0">
 									<Switch
-										state={webSearchEnabled}
+										state={webSearchEnabled || getWebSearchMode($settings) === 'always'}
 										on:change={async (e) => {
 											const state = e.detail;
 											await tick();

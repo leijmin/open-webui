@@ -64,6 +64,7 @@
 	} from '$lib/utils';
 	import { AudioQueue } from '$lib/utils/audio';
 	import { isImageGenerationOnlyModel, isVideoGenerationOnlyModel } from '$lib/utils/modelCapabilities';
+	import { getWebSearchMode } from '$lib/utils/webSearchPreference';
 
 	import {
 		archiveChatById,
@@ -2040,7 +2041,7 @@
 				(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.web_search ?? true
 			).length === currentModels.length
 		) {
-			if ($config?.features?.enable_web_search && ($settings?.webSearch ?? false) === 'always') {
+			if ($config?.features?.enable_web_search && getWebSearchMode($settings) === 'always') {
 				features = { ...features, web_search: true };
 			}
 		}

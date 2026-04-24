@@ -65,7 +65,7 @@ class ProfileImageUrlForm(BaseModel):
 
 
 class UpdatePasswordForm(BaseModel):
-    password: str
+    password: Optional[str] = None
     new_password: str
 
 
